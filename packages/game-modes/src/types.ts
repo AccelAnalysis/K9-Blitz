@@ -39,6 +39,14 @@ export type DogAssignmentMode =
   | "rules_defined"
   | "unresolved";
 
+export type RuleProvenance =
+  | "source_verified"
+  | "owner_authorized_digital";
+
+export type TurnOrderMode = "seat_order";
+export type TrainerCardVisibility = "public" | "owner_only";
+export type VictoryMode = "first_to_finish";
+
 export interface GameConfiguration {
   readonly mode: GameMode;
   readonly minimumPlayers: number;
@@ -48,6 +56,13 @@ export interface GameConfiguration {
   readonly rulesVersion: string;
   readonly contentVersion: string;
   readonly pawnIds: readonly string[];
+  /** Optional for legacy configurations; Digital Rules v1 explicitly allows repeated dog profiles. */
+  readonly uniqueDogAssignments?: boolean;
+  readonly rulesProfileId?: string;
+  readonly ruleProvenance?: RuleProvenance;
+  readonly turnOrderMode?: TurnOrderMode;
+  readonly trainerCardVisibility?: TrainerCardVisibility;
+  readonly victoryMode?: VictoryMode;
 }
 
 export interface Player {
