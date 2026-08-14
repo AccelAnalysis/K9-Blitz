@@ -31,7 +31,7 @@ Physical-game facts that are not yet supported by an authoritative rulebook rema
 
 ### Local pass-and-play
 
-`LocalPassAndPlaySession` rotates active players by seat and emits a privacy-handoff requirement when the eventual rules/content model says private information exists.
+`LocalPassAndPlaySession` receives the authoritative active/next player from the Rules/Turn engine and emits a privacy-handoff requirement when the eventual rules/content model says private information exists. It never decides turn order itself.
 
 ### Online private multiplayer
 
@@ -83,6 +83,7 @@ This package has no runtime dependencies.
 
 ```bash
 cd packages/game-modes
+npm install
 npm run build
 npm test
 ```
