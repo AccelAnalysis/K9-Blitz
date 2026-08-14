@@ -39,6 +39,14 @@ export type DogAssignmentMode =
   | "rules_defined"
   | "unresolved";
 
+export type RuleProvenance =
+  | "source_verified"
+  | "owner_authorized_digital";
+
+export type TurnOrderMode = "seat_order";
+export type TrainerCardVisibility = "public" | "owner_only";
+export type VictoryMode = "first_to_finish";
+
 export interface GameConfiguration {
   readonly mode: GameMode;
   readonly minimumPlayers: number;
@@ -48,6 +56,14 @@ export interface GameConfiguration {
   readonly rulesVersion: string;
   readonly contentVersion: string;
   readonly pawnIds: readonly string[];
+  /** Optional on legacy configurations; canonical v1 sets this to true. */
+  readonly uniqueDogAssignments?: boolean;
+  /** Versioned owner/source provenance for the player-mode rule profile. */
+  readonly rulesProfileId?: string;
+  readonly ruleProvenance?: RuleProvenance;
+  readonly turnOrderMode?: TurnOrderMode;
+  readonly trainerCardVisibility?: TrainerCardVisibility;
+  readonly victoryMode?: VictoryMode;
 }
 
 export interface Player {
