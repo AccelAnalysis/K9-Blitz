@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>K9 Blitz — Board Calibration Preview</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div>
+        <strong>K9 Blitz Board Preview</strong>
+        <span class="badge">calibration reference</span>
+      </div>
+      <div class="controls">
+        <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" data-action="fit">Fit</button>
+        <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
+        <label><input type="checkbox" data-action="debug" checked /> hit regions</label>
+      </div>
+    </header>
+    <main class="viewport" data-viewport>
+      <div class="stage" data-stage>
+        <img src="../../packages/board-map/assets/board-reference.svg" alt="K9 Blitz Barkley Ville development board schematic" draggable="false" />
+        <div class="overlay" data-overlay aria-label="Board interaction overlay"></div>
+        <div class="pawns" data-pawns aria-label="Pawn placement preview"></div>
+      </div>
+    </main>
+    <footer class="status"><span data-status>Drag to pan. Scroll/pinch to zoom. Click the board to inspect normalized coordinates.</span></footer>
+    <script type="module" src="./preview.js"></script>
+  </body>
+</html>
