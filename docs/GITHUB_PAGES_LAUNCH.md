@@ -10,6 +10,18 @@ Expected project URL:
 
 The workflow copies `packages/board-map/assets/board-reference.svg` to the published `assets/board.svg`, keeping board artwork replaceable without changing gameplay/UI code.
 
+## One-time repository activation
+
+The first deployment attempt proved the artifact assembles and verifies correctly, but GitHub returned `Get Pages site failed: Not Found` because Pages has never been initialized for this repository. This is a repository-level setting, not an application defect.
+
+A repository administrator must perform this one-time activation:
+
+1. Open **Settings → Pages** in `AccelAnalysis/K9-Blitz`.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Open **Actions → Deploy GitHub Pages** and run the workflow again (or make any subsequent push to `main`).
+
+No code or secret changes are required after that setting is enabled.
+
 ## Launch functionality
 
 The GitHub Pages release supports:
