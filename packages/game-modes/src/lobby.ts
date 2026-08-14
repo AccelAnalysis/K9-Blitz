@@ -1,4 +1,5 @@
 import { GameModesError } from "./errors.ts";
+import { K9_BLITZ_PLAYER_RULES_V1 } from "./rules.ts";
 import type {
   GameConfiguration,
   JoinPlayerInput,
@@ -45,6 +46,29 @@ function validateConfiguration(configuration: GameConfiguration): void {
       "rulesVersion and contentVersion are required.",
     );
   }
+
+  if (configuration.rulesProfileId === K9_BLITZ_PLAYER_RULES_V1.id) {
+    const canonicalPawns = K9_BLITZ_PLAYER_RULES_V1.pawnIds;
+    const pawnInventoryMatches =
+      configuration.pawnIds.length === canonicalPawns.length &&
+      canonicalPawns.every((pawnId) => configuration.pawnIds.includes(pawnId));
+
+    if (
+      configuration.minimumPlayers !== K9_BLITZ_PLAYER_RULES_V1.minimumPlayers ||
+      configuration.maximumPlayers !== K9_BLITZ_PLAYER_RULES_V1.maximumPlayers ||
+      configuration.dogAssignmentMode !== "player_choice" ||
+      configuration.uniqueDogAssignments !== true ||
+      configuration.turnOrderMode !== "seat_order" ||
+      configuration.trainerCardVisibility !== "public" ||
+      configuration.victoryMode !== "first_to_finish" ||
+      !pawnInventoryMatches
+    ) {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "The k9-blitz-player-rules-1.0 profile must use its canonical player limits, pawn inventory, dog, turn-order, visibility, and victory settings.",
+      );
+    }
+  }
 }
 
 function validateParticipantForMode(
@@ -59,11 +83,19 @@ function validateParticipantForMode(
     );
   }
 
-  if (configuration.mode === "local_pass_and_play" && participant.controllerType === "human_remote") {
-    throw new GameModesError(
-      "INVALID_CONFIGURATION",
-      "Local pass-and-play does not accept remote-human controllers.",
-    );
+  if (configuration.mode === "local_pass_and_play") {
+    if (participant.controllerType === "human_remote") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Local pass-and-play does not accept remote-human controllers.",
+      );
+    }
+    if (isHost && participant.controllerType !== "human_local") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Local pass-and-play requires a local human host in Seat 1.",
+      );
+    }
   }
 
   if (configuration.mode === "online_private") {
@@ -78,6 +110,27 @@ function validateParticipantForMode(
       throw new GameModesError(
         "INVALID_CONFIGURATION",
         "Online private games require a remote human host.",
+      );
+    }
+  }
+
+  if (configuration.mode === "solo_vs_ai") {
+    if (participant.controllerType === "human_remote") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Solo vs AI is a local game and does not accept remote-human controllers.",
+      );
+    }
+    if (isHost && participant.controllerType !== "human_local") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Solo vs AI requires the sole human player to host from Seat 1.",
+      );
+    }
+    if (!isHost && participant.controllerType !== "computer") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Solo vs AI permits exactly one local human; every additional seat must be a computer player.",
       );
     }
   }
@@ -116,6 +169,21 @@ function assertLobbyOpen(state: LobbyState): void {
 function assertHost(state: LobbyState, actorPlayerId: string): void {
   if (state.hostPlayerId !== actorPlayerId) {
     throw new GameModesError("HOST_REQUIRED", "Only the host can perform this lobby action.");
+  }
+}
+
+function hasValidModeRoster(state: LobbyState): boolean {
+  const localHumans = state.players.filter((player) => player.controllerType === "human_local").length;
+  const remoteHumans = state.players.filter((player) => player.controllerType === "human_remote").length;
+  const computers = state.players.filter((player) => player.controllerType === "computer").length;
+
+  switch (state.configuration.mode) {
+    case "local_pass_and_play":
+      return localHumans >= 1 && remoteHumans === 0;
+    case "online_private":
+      return remoteHumans >= 1 && localHumans === 0;
+    case "solo_vs_ai":
+      return localHumans === 1 && remoteHumans === 0 && computers >= 1;
   }
 }
 
@@ -285,6 +353,15 @@ export function assignDog(
     throw new GameModesError("DOG_REQUIRED", "A dog identifier is required.");
   }
 
+  if (state.configuration.uniqueDogAssignments) {
+    const owner = state.players.find(
+      (candidate) => candidate.id !== playerId && candidate.dogId === dogId,
+    );
+    if (owner) {
+      throw new GameModesError("DOG_UNAVAILABLE", `Dog ${dogId} is already assigned.`);
+    }
+  }
+
   return withDerivedSetupState(
     replacePlayer(state, {
       ...player,
@@ -323,7 +400,8 @@ export function canStartGame(state: LobbyState): boolean {
   return (
     state.status === "open" &&
     state.players.length >= state.configuration.minimumPlayers &&
-    state.players.every((player) => player.ready)
+    state.players.every((player) => player.ready) &&
+    hasValidModeRoster(state)
   );
 }
 
@@ -335,6 +413,13 @@ export function startGame(state: LobbyState, actorPlayerId: string): LobbyState 
     throw new GameModesError(
       "MINIMUM_PLAYERS_NOT_MET",
       "The minimum configured player count has not been met.",
+    );
+  }
+
+  if (!hasValidModeRoster(state)) {
+    throw new GameModesError(
+      "MODE_ROSTER_INVALID",
+      `The current player roster is not valid for ${state.configuration.mode}.`,
     );
   }
 
