@@ -34,6 +34,63 @@ export interface TrainerCardDrawResult {
   readonly state: TrainerDeckState;
 }
 
+/**
+ * Digital Rules v1 uses a public authored sequence that wraps after the final card.
+ * Keep this separate from the generic shuffled finite-deck primitive below.
+ */
+export interface CyclicTrainerDeckState {
+  readonly deckId: string;
+  readonly orderedInstanceIds: readonly string[];
+  readonly cursor: number;
+}
+
+export interface CyclicTrainerCardDrawResult {
+  readonly cardInstanceId: string;
+  readonly state: CyclicTrainerDeckState;
+}
+
+export function createCyclicTrainerDeck(
+  deckId: string,
+  instances: readonly TrainerCardInstance[],
+): CyclicTrainerDeckState {
+  assertUniqueIds(
+    instances.map((card) => card.instanceId),
+    `Trainer deck ${deckId}`,
+  );
+  if (instances.length === 0) {
+    throw new ComponentInvariantError(
+      "TRAINER_DECK_EMPTY",
+      `Trainer deck ${deckId} requires at least one card instance.`,
+    );
+  }
+
+  return {
+    deckId,
+    orderedInstanceIds: instances.map((card) => card.instanceId),
+    cursor: 0,
+  };
+}
+
+export function drawCyclicTrainerCard(
+  state: CyclicTrainerDeckState,
+): CyclicTrainerCardDrawResult {
+  const cardInstanceId = state.orderedInstanceIds[state.cursor];
+  if (cardInstanceId === undefined) {
+    throw new ComponentInvariantError(
+      "INVALID_TRAINER_DECK_CURSOR",
+      `Trainer deck ${state.deckId} has invalid cursor ${state.cursor}.`,
+    );
+  }
+
+  return {
+    cardInstanceId,
+    state: {
+      ...state,
+      cursor: (state.cursor + 1) % state.orderedInstanceIds.length,
+    },
+  };
+}
+
 export function createTrainerDeck(
   deckId: string,
   instances: readonly TrainerCardInstance[],
@@ -72,10 +129,7 @@ export function drawTrainerCard(state: TrainerDeckState): TrainerCardDrawResult 
   };
 }
 
-/**
- * Moves an already-drawn card into the discard pile. Reshuffling is intentionally
- * not automatic because the physical rulebook has not yet established recycle behavior.
- */
+/** Moves an already-drawn card into the discard pile. */
 export function discardTrainerCard(
   state: TrainerDeckState,
   cardInstanceId: string,
