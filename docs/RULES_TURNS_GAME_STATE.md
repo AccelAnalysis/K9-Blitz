@@ -1,225 +1,231 @@
 # 3. Rules, Turns & Game State
 
-## Scope
+## Status
 
-This workstream is implemented in `packages/game-engine`. It is the authoritative gameplay-control layer for K9 Blitz and owns:
+**Implemented with the owner-authorized launch rules.**
 
-1. complete rules-execution framework;
-2. authoritative game state;
+This workstream lives in `packages/game-engine`. The generic authoritative engine is now paired with the concrete `digitalRulesV1.ts` runtime for the product authority in `docs/DIGITAL_RULES_V1.md`.
+
+Canonical identity:
+
+- rules/profile ID: `k9-blitz-digital-1.0`;
+- engine `rulesVersion`: `k9-blitz-digital-1.0`;
+- content version: `launch-1.0`.
+
+Missing physical-rule semantics are no longer blockers: the owner-authorized Digital Rules v1 specification fills those gaps while preserving provenance as digital product design rather than recovered physical-rule evidence.
+
+## Responsibilities
+
+The game-engine layer owns:
+
+1. authoritative rules execution;
+2. authoritative JSON-serializable game state;
 3. turn controller and legal-action gating;
 4. semantic game history;
 5. revision-aware concurrency;
-6. rules/content version binding;
-7. game-state invariants and atomic rejection of corrupt transitions.
+6. exact rules/content version binding;
+7. effect ordering;
+8. state invariants and atomic rejection;
+9. Digital Rules v1 movement, spaces, Trainer Cards, Paw Tokens, Competition progress, extra turns, and victory.
 
-The package is framework-independent and imports no UI, browser, rendering, persistence, authentication, or multiplayer transport SDK.
+It imports no UI, rendering engine, browser API, persistence SDK, authentication SDK, or multiplayer transport.
 
-## Governing principle
-
-> The board shows what happened; the rules engine decides what happened; game state remembers what happened.
-
-Clients submit commands. The engine validates the command against the exact authoritative snapshot, invokes the active versioned rules runtime, applies one transition, validates resulting invariants, and returns state plus semantic events.
+## Governing flow
 
 ```text
-client intent
-  -> command envelope (commandId + expectedRevision)
+player/controller intent
+  -> typed command + commandId + expectedRevision
   -> lifecycle / player / phase validation
-  -> versioned RulesRuntime
-  -> ordered effect resolution
+  -> Digital Rules v1 runtime
+  -> movement + ordered effects
   -> invariant validation
-  -> authoritative GameState revision N+1
-  -> GameEvents stamped with revision N+1
+  -> authoritative state revision N+1
+  -> semantic events stamped with revision N+1
+  -> UI / save / multiplayer synchronization
 ```
 
-## Authoritative GameState
+The board shows what happened; the rules engine decides what happened; game state remembers what happened.
 
-The snapshot records:
+## Authoritative state
 
-- `gameId`;
-- `rulesetId`, `rulesVersion`, `contentVersion`;
-- monotonic `revision`;
-- lifecycle status;
-- turn order, current player, turn number, and round number;
+`GameState` stores:
+
+- game ID;
+- ruleset ID, rules version, and content version;
+- monotonic revision;
+- game lifecycle;
+- setup/turn order and current player;
+- turn number and round number;
 - exact active `TurnState`;
-- player board position, dog, card/token inventory, statuses, completion data;
-- dog runtime state;
-- card deck draw/discard state;
-- token bag/discard/removed state;
-- competition runtime state;
-- extension data for versioned domain mechanics;
-- ordered pending effects;
+- each player's board space, dog identity, pawn identity, Paw Tokens, Competition progress, card draw count, statuses, and finish state;
+- Trainer Card draw/discard state;
+- token state;
+- Competition state;
+- extension data such as a one-turn Second Chance marker;
+- pending effects;
 - winner state;
 - append-only semantic history;
 - command receipts;
-- event/effect sequence counters;
-- timestamps.
+- event/effect sequence counters and timestamps.
 
-The state is JSON-serializable so persistence and reconnect restore the exact interrupted phase, including a pending decision.
+The snapshot is JSON-serializable, allowing exact save/reconnect instead of reconstructing a game from presentation state.
 
-## Revision-aware commands
+## Commands and concurrency
 
-Every command carries `expectedRevision`. The engine rejects a command if its revision is not the current authoritative revision. Accepted commands increment the revision exactly once regardless of how many events they emit.
+Current engine commands are:
 
-A previously processed `commandId` is also rejected without mutation, preventing retries/double-clicks from rolling, moving, resolving a choice, or ending a turn twice.
+- `START_GAME`;
+- `ROLL_DICE`;
+- `CHOOSE_OPTION`;
+- `END_TURN`;
+- `PAUSE_GAME`;
+- `RESUME_GAME`.
 
-This is the concurrency boundary for future online multiplayer: clients may be stale; the engine may not be.
+Every command includes `expectedRevision`. A stale command fails without mutation. A processed `commandId` cannot run a second time. Accepted commands increment the revision exactly once even if multiple semantic events are emitted.
 
-## Version binding
+These guarantees are the server-authoritative boundary for future online rooms.
 
-Every game is created against all three identifiers:
+## Turn controller — Digital Rules v1
 
-- ruleset ID;
-- exact rules version;
-- exact content version.
-
-A runtime with a different rules or content version cannot mutate the saved game. Migration, if ever needed, must be explicit rather than silently applying newer rules midway through a game.
-
-## Turn state machine
-
-Core phases:
+Digital Rules v1 uses setup/seat order and automatic turn completion.
 
 ```text
-turn_start
-  -> awaiting_roll
-  -> resolving
-       -> awaiting_decision (when a rule requires player input)
-       -> resolving
-  -> awaiting_turn_end
-  -> turn_complete
-  -> next turn_start
+TURN_STARTED / awaiting_roll
+  -> ROLL_DICE
+  -> DICE_ROLLED
+  -> PAWN_MOVED
+  -> SPACE_LANDED
+  -> resolve space / Trainer Card effects
+  -> evaluate Finish victory
+  -> TURN_ENDED
+  -> next trainer awaiting_roll
 ```
 
-The UI should call `getLegalActions(state, playerId)` and render those actions. It must not independently decide that a player may roll, choose, or end a turn.
+`Second Chance` overrides the normal next-player result exactly once for the turn in which it is granted.
 
-Turn end can be configured as manual or automatic by the active rules runtime. Pending mandatory effects always block completion.
+The generic engine retains `awaiting_decision` and manual end-turn capability for future rules variants, but the v1 launch rules have no persistent hidden hand or normal strategic choice that requires them.
 
-## Commands
+## Concrete Digital Rules v1 runtime
 
-Current control commands:
+`packages/game-engine/src/digitalRulesV1.ts` implements the committed product rules:
 
-- `START_GAME`
-- `ROLL_DICE`
-- `CHOOSE_OPTION`
-- `END_TURN`
-- `PAUSE_GAME`
-- `RESUME_GAME`
+- 2–4 trainers;
+- Player 1 / Seat 1 starts;
+- setup-order pawns red, blue, green, yellow;
+- dog profiles are presentation identities in v1;
+- 72 spaces: Start `space-0`, Finish `space-71`;
+- two d6, move by their sum (2–12);
+- movement clamps at Finish; exact roll not required;
+- doubles have no bonus;
+- normal roll resolves its destination space exactly once;
+- Trainer Card movement does not resolve its destination space;
+- named token/training/Vet/Trainer/Competition effects mirror `apps/web/game-data.js` and `docs/DIGITAL_RULES_V1.md`;
+- Paw Token balances cannot go negative;
+- Competition progress is 0–8 and does not gate victory;
+- 12 public Trainer Cards resolve immediately in the committed cyclic order;
+- exhausted Trainer draw pile recycles the discard pile in the same order;
+- first trainer reaching Finish wins immediately.
 
-The command expresses intent, not outcome. For online play a client submits `ROLL_DICE`; it never submits an authoritative total, destination, token award, card result, or winner assertion.
+## Trainer Card lifecycle
 
-## RulesRuntime integration seam
+Digital Rules v1 has no persistent player hand. A Trainer Card:
 
-Because the physical rulebook is not yet in the repository, undocumented rules remain unresolved. The engine exposes a versioned adapter rather than guessing them:
+1. is drawn from the front of the canonical draw pile;
+2. increments the player's `cardsDrawn` count;
+3. moves to discard state;
+4. emits a public `TRAINER_CARD_DRAWN` domain event;
+5. resolves its effects immediately;
+6. remains out of player `cardIds`, preserving the one-location-per-card invariant.
 
-```ts
-interface RulesRuntime {
-  metadata;
-  startSpaceId;
-  turnPolicy;
-  rollDice(random);
-  calculateMovement(state, playerId, dice);
-  getLandingEffects(state, playerId, spaceId);
-  resolveDomainEffect(domain, effect, context);
-  evaluateVictory(state);
-  getNextPlayerId?(state, currentPlayerId);
-}
-```
+When the draw pile is exhausted, discard becomes the next draw cycle without changing order.
 
-This lets the current parallel workstreams integrate cleanly:
+## Space/effect resolution
 
-- Board/Map defines authoritative board topology/path traversal.
-- Core Game Components supplies deterministic dice/card/dog/token/space/competition primitives.
-- Rules/Turns/Game State authorizes, orders, commits, versions, and records those mechanics.
-- UI consumes state/events/legal actions.
-- Online multiplayer runs the same engine behind the authoritative server boundary.
+Board landing produces `DOMAIN` effects such as:
 
-## Rule-effect queue
+- `GAIN_PAW_TOKENS`;
+- `SPEND_PAW_TOKENS`;
+- `ADVANCE_COMPETITION`;
+- `DRAW_TRAINER_CARD`.
 
-Landing rules return ordered effects. Two engine-level envelopes exist:
+Trainer Cards may additionally produce:
 
-- `CHOICE`: blocks the turn and exposes only the configured options to the target player;
-- `DOMAIN`: delegates actual component mutation to the rules runtime.
+- `MOVE_RELATIVE`;
+- `GRANT_EXTRA_TURN`.
 
-A domain resolution may emit semantic domain events and enqueue follow-up effects. Follow-ups execute before later queued effects, preserving deterministic causal order.
+Effects resolve through the engine queue, so every accepted state mutation remains ordered, versioned, auditable, and invariant-checked. Card movement intentionally has no follow-up landing effect under v1.
 
-## Event history
+## Paw Tokens
 
-Core event types include:
+The browser displays Paw Tokens as a non-negative count. The authoritative state represents held markers with unique IDs so duplicate-location checks remain possible. Spent token IDs move to discard state and are reused before new IDs are created. There is no v1 token-supply exhaustion penalty because the canonical rules define Paw Tokens as a reward/spend resource, not a finite victory-limiting inventory.
 
-- `GAME_STARTED`
-- `TURN_STARTED`
-- `DICE_ROLLED`
-- `PAWN_MOVED`
-- `SPACE_LANDED`
-- `RULE_EFFECT_APPLIED`
-- `DECISION_REQUESTED`
-- `DECISION_RESOLVED`
-- `DOMAIN_EVENT`
-- `TURN_ENDED`
-- `GAME_PAUSED`
-- `GAME_RESUMED`
-- `GAME_COMPLETED`
+## Competition state
 
-Each event carries an event sequence and committed state revision. `PAWN_MOVED` stores the full logical path, so presentation can animate each hop while game correctness remains independent of animation success.
+Each player begins at 0. Training/agility/competition spaces and specified Trainer Cards increment progress up to 8. Progress is mirrored into `competition.participants` and player data. Reaching 8 is an achievement, not a Finish prerequisite.
+
+## Victory
+
+After mandatory movement/effects, `evaluateVictory()` checks for a pawn at `space-71`. The game transitions atomically to `completed`, normal gameplay commands become illegal, and winner metadata records player, dog, Competition progress, Paw Tokens, cards drawn, and winning turn.
+
+## Game history
+
+Core semantic events include:
+
+- `GAME_STARTED`;
+- `TURN_STARTED`;
+- `DICE_ROLLED`;
+- `PAWN_MOVED`;
+- `SPACE_LANDED`;
+- `RULE_EFFECT_APPLIED`;
+- `DOMAIN_EVENT`;
+- `TURN_ENDED`;
+- `GAME_PAUSED`;
+- `GAME_RESUMED`;
+- `GAME_COMPLETED`.
+
+Each event carries an ordered sequence and committed state revision. Logical movement includes the traversed path so animation can fail/recover without changing the rules result.
 
 ## Invariants
 
-The engine validates the incoming snapshot and the proposed post-command snapshot. Current invariants include:
+The engine validates incoming and proposed state. Current invariants include:
 
 - unique player IDs;
-- turn order contains exactly the game players;
-- active game has one valid current player and active turn;
+- turn order contains each game player exactly once;
+- active game has one valid current player and turn;
 - turn owner equals `currentPlayerId`;
-- waiting decisions agree with pending effect state;
-- winner state exists exactly when the game is completed;
-- a physical card instance exists in at most one authoritative location;
-- a physical token instance exists in at most one authoritative location;
+- pending decisions and pending effects agree;
+- winner lifecycle is consistent;
+- a card/token instance exists in at most one authoritative location;
 - command receipts are unique;
-- event sequence is strictly increasing and matches `eventSequence`;
+- event sequence is strictly increasing;
 - revision is a non-negative integer.
 
-If an adapter would violate an invariant, the command is rejected and the original input snapshot is returned unchanged.
+If runtime output violates an invariant, the command is rejected and the original authoritative snapshot remains unchanged.
 
 ## Randomness
 
-Randomness is injected through `RandomSource`; authoritative random outcomes are included in semantic events. `SeededRandomSource` supports deterministic fixtures/replays and reproducible bug reports. Production online play should inject a server-owned unpredictable source rather than client randomness.
+Digital Rules v1 uses injected authoritative randomness for the two dice. The v1 Trainer Card deck is cyclic, not shuffled, so no card randomness is invoked. Any future version that introduces shuffling must use the engine `RandomSource` and update the digital rules/content authority.
 
-## Physical-rule dependency
+## Versioning and save compatibility
 
-The execution framework is implemented, but final K9 Blitz rule semantics remain **unverified** until authoritative source material is added for:
-
-- player count/setup and starting-player determination;
-- exact dice usage/special combinations;
-- movement topology and Finish behavior;
-- every board-space action;
-- Trainer Card draw/hold/discard/effect rules;
-- token meanings, acquisition, spending, and return behavior;
-- Dog Card attributes/abilities/training progression;
-- K9 Competition Track eligibility/progression/rewards;
-- extra/skip-turn behavior;
-- victory and tie-break conditions.
-
-Those facts must be encoded in a source-backed `RulesRuntime`, not inferred from the board photograph.
+A game is bound to exact `rulesset/rulesVersion/contentVersion` values. A mismatched runtime cannot silently mutate it. Browser saves similarly require the launch rules/content versions. Future changes must version explicitly rather than altering the meaning of an in-progress v1 game.
 
 ## QA coverage
 
-The engine tests cover positive, negative, edge, and persistence/concurrency paths including:
+In addition to the generic engine tests, Digital Rules v1 tests cover:
 
-- serializable version-bound game creation;
-- start/turn ownership/legal actions;
-- stale-revision rejection;
-- wrong-player rejection;
-- deterministic dice/movement/history;
-- blocking decisions and ordered follow-up effects;
-- player/round advancement;
-- duplicate-command protection;
-- atomic victory and post-win lockout;
-- pause/resume;
-- duplicate card/token-location invariants;
-- JSON restore at the exact turn phase;
-- rules-version mismatch;
-- content-version mismatch;
-- corrupt adapter-state rejection;
-- input snapshot immutability.
+- canonical rules/content identity;
+- 2–4 player setup and seat ordering;
+- canonical pawn assignment;
+- two-die movement and automatic turn advancement;
+- Obedience/Paw Token resolution;
+- Trainer Card immediate/cyclic lifecycle;
+- deck recycling;
+- card movement without destination-space resolution;
+- Second Chance extra turn;
+- Competition cap at 8;
+- Vet Check with zero tokens;
+- Finish clamping and first-to-Finish victory.
 
 Run repository-wide verification with:
 
