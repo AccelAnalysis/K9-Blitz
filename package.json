@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test packages/*/src/*.test.ts",
+    "test": "node --test packages/*/src/*.test.ts packages/*/test/*.test.ts packages/*/test/*.test.mjs",
     "typecheck": "npx --yes --package typescript@6.0.2 tsc -p tsconfig.json",
     "qa": "npm run typecheck && npm test"
   },
