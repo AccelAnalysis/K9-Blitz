@@ -1,32 +1,62 @@
 # K9 Blitz Game Modes & Players
 
-This package implements Workstream 5: **Game Lobby, Local Multiplayer, Online Multiplayer, and Computer Players**.
+This package implements Workstream 5: **Game Lobby, Local Multiplayer, Online Multiplayer, Solo vs AI, and Computer Players**.
 
-## Authority boundary
+## Rule authority and provenance
 
-Game Modes & Players owns **who is participating and how commands reach the game**. It does not own dice outcomes, board movement, card effects, turn order, or victory. `packages/game-engine` remains the sole authority for gameplay state transitions.
+The available game reference establishes the K9 Blitz/Barkley Ville theme, physical board, two dice, dog pawns, Trainer Cards, dog profiles including Max and Luna, tokens, named action spaces, and the K9 Competition Track. The project owner has explicitly authorized fabrication of missing details so the digital game can be complete.
 
-The subsystem follows the repository's engineering guardrails:
+Accordingly, this package now distinguishes two kinds of rule authority:
 
-- clients/controllers submit intent rather than authoritative outcomes;
-- command preflight is revision-aware and structurally matches the game-engine envelope (`commandId`, `actorPlayerId`, `expectedRevision`);
-- the game engine must still validate every command before mutation;
-- local pass-and-play receives the active/next player from the authoritative turn state instead of inventing turn order;
-- computer players choose only from legal actions supplied by the authoritative layer;
-- online clients accept newer full authoritative snapshots and ignore stale/duplicate snapshots;
-- reconnect credentials are rotated and remote identities remain bound to stable game-player IDs.
+- **source-verified** — behavior/components directly supported by supplied physical-game materials;
+- **owner-authorized digital** — synthesized behavior approved for the digital edition where the available materials do not provide an exact rule.
 
-## Unresolved physical-game facts
+Owner-authorized rules are versioned and tested; they are not represented as verbatim transcriptions of an unavailable physical rulebook.
 
-The available source material does not yet establish several physical-game rules. They remain configuration or explicit unresolved values rather than guessed constants:
+## Canonical player rules — v1.0
 
-- minimum and maximum player count;
-- dog-assignment method;
-- turn-order method;
-- private/public card visibility;
-- Finish and victory behavior.
+`K9_BLITZ_PLAYER_RULES_V1` is the canonical player/mode profile for the current digital edition:
 
-Pawn inventory is also configuration-driven so the eventual authoritative component inventory can set the exact supported colors/count.
+- **2–5 total players**;
+- five pawn identities: **red, blue, green, yellow, brown**;
+- each trainer chooses a dog;
+- **dogs are unique within a game**;
+- **Seat 1 starts**;
+- turns proceed in ascending seat order and wrap back to Seat 1;
+- Trainer Cards are **public information** in the base digital rules;
+- the **first trainer to reach Finish wins**;
+- spectators and late joins are not part of v1;
+- configuration is tagged `owner_authorized_digital` and `k9-blitz-player-rules-1.0`.
+
+`createK9BlitzGameConfiguration(mode, contentVersion)` produces the canonical configuration instead of requiring callers to invent player limits or pawn inventory.
+
+## Modes
+
+### Local pass-and-play
+
+- 2–5 total players;
+- Seat 1 must be a local human host;
+- later seats may be local humans or computer players;
+- no accounts are required;
+- the shared device presents the authoritative active player supplied by the turn engine.
+
+### Solo vs AI
+
+- one local human in Seat 1;
+- 1–4 computer opponents;
+- no second human seat is permitted in this mode;
+- the human begins because Seat 1 starts under Digital Rules v1.0.
+
+### Online private
+
+- 2–5 total players;
+- host must be an authenticated remote human;
+- later seats may be authenticated remote humans or computer players;
+- one online identity may occupy only one player seat;
+- reconnect preserves the original `playerId` and rotates reconnect credentials;
+- the domain layer is transport-independent and remains compatible with a future deployed authoritative multiplayer host.
+
+The GitHub Pages build currently exposes Local/Solo play. The online domain contracts are implemented, but true cross-device rooms still require a deployed server-backed authoritative host; the static Pages client does not pretend otherwise.
 
 ## Lobby
 
@@ -34,41 +64,41 @@ Pawn inventory is also configuration-driven so the eventual authoritative compon
 
 - stable numbered seats;
 - separate host/session authority and gameplay authority;
-- configurable player limits;
-- local-human, remote-human, and computer controller types;
+- canonical 2–5 player limits through the v1 profile;
+- mode-specific controller validation;
 - mutually exclusive pawn assignment;
+- mutually exclusive dog assignment under the canonical profile;
 - ready-state and minimum-player start gates;
 - authenticated identity requirements for online humans;
 - one online user identity per player seat;
 - explicit `open -> starting -> closed` lifecycle.
 
-Closing the lobby marks participants as waiting. It intentionally does **not** choose the first player.
+## Turn-order integration
 
-## Local pass-and-play
+Game Modes defines the owner-authorized policy—Seat 1 first, then seat order—but the **authoritative game engine still stores and advances the active player**. `getSeatOrderedPlayerIds` and `getStartingPlayerId` resolve the policy for engine initialization without allowing UI/session code to mutate gameplay state directly.
 
-`LocalPassAndPlaySession` is a presentation/session helper for one-device games. The Rules/Turn engine supplies the initial active player and every next player. The helper only tracks device handoff and whether a privacy gate is required when private information exists.
+## Local pass-and-play privacy
 
-## Online private multiplayer
+`LocalPassAndPlaySession` remains capable of enforcing a privacy handoff for future content. Under Digital Rules v1.0, Trainer Cards are public, so the base game does not require a private-device handoff between turns.
 
-`OnlineRoomSessionRegistry` is transport-independent. It supports:
+## Online synchronization
+
+`OnlineRoomSessionRegistry` supports:
 
 - authenticated `userId -> playerId` binding;
-- connected/disconnected session state;
-- reconnect-token validation;
-- reconnect credential rotation;
-- preservation of the original game player across reconnects.
+- connection/disconnection state;
+- reconnect-token validation and rotation;
+- preservation of the original player identity.
 
-`OnlineStateCursor` accepts only newer full authoritative snapshots for the expected game. It permits revision gaps because snapshots are complete state, not event deltas.
+`OnlineStateCursor` accepts only newer authoritative snapshots for the expected game and rejects wrong-game state.
 
-`createRoomCode` produces human-friendly room locators without ambiguous characters. Random selection is injectable for deterministic tests. Room codes are locators, not gameplay randomness or administrative credentials; a production room repository must enforce uniqueness.
-
-Network transport, persistent room storage, authentication-provider integration, and deployment topology remain adapters around this domain package and are not invented here.
+`createRoomCode` provides human-friendly room locators. Room codes are locators, not gameplay randomness or administrative credentials; a deployed room repository must still enforce uniqueness.
 
 ## Computer players
 
-`ComputerController` is a deterministic baseline controller. It cannot manufacture moves or inspect information outside the legal-action set it receives. It chooses the highest `scoreHint`; ties preserve authoritative legal-action order. More sophisticated AI can replace the scoring policy without becoming a second rules engine.
+`ComputerController` cannot manufacture a move or bypass the rules engine. It receives only authoritative legal actions and selects the highest `scoreHint`; ties preserve authoritative legal-action order. This keeps AI as a controller, not a second rules implementation.
 
-## Rules-engine integration
+## Rules-engine boundary
 
 ```text
 Local UI / Remote UI / Computer Controller
@@ -85,11 +115,24 @@ Local UI / Remote UI / Computer Controller
       presentation / synchronization
 ```
 
-`preflightPlayerCommand` is defense-in-depth for a session/network boundary. A successful preflight is never permission to mutate state directly; the same command must still be executed by the game engine.
+`preflightPlayerCommand` remains defense-in-depth. Successful preflight never authorizes direct state mutation; the authoritative game engine must execute and validate the command.
 
 ## Verification
 
-The package uses the repository's Node 24 native-TypeScript conventions and root QA workflow. Tests cover lobby invariants, start gating, rules-driven local handoff, stale/wrong-player/illegal command rejection, reconnect identity, duplicate online identities, authoritative snapshot ordering, deterministic computer choice, and room-code random-source validation.
+The repository uses Node 24 native TypeScript and root QA. Game Modes tests cover:
+
+- the owner-authorized v1 profile;
+- five-player seat capacity;
+- Seat 1 starting order;
+- unique pawns and dogs;
+- Solo vs AI roster enforcement;
+- minimum-player/readiness gates;
+- public-card local handoff behavior;
+- stale/wrong-player/illegal command rejection;
+- online identity/reconnect behavior;
+- authoritative snapshot ordering;
+- deterministic computer-player choice;
+- room-code random-source validation.
 
 Run from the repository root:
 
