@@ -1,24 +1,38 @@
-export const RULES_VERSION = "digital-demo-0.1";
-export const CONTENT_VERSION = "launch-0.1";
+export const RULES_VERSION = "digital-1.0";
+export const CONTENT_VERSION = "launch-1.0";
+
+export const PLAYER_RULES = Object.freeze({
+  id: "k9-blitz-player-rules-1.0",
+  provenance: "owner_authorized_digital",
+  minimumPlayers: 2,
+  maximumPlayers: 5,
+  turnOrder: "seat_order",
+  startingSeatNumber: 1,
+  uniqueDogs: true,
+  trainerCardVisibility: "public",
+  victory: "first_to_finish",
+});
 
 export const PAWNS = [
   { id: "red", label: "Red", color: "#d83a35" },
   { id: "blue", label: "Blue", color: "#1688c9" },
   { id: "green", label: "Green", color: "#24a257" },
   { id: "yellow", label: "Yellow", color: "#f5c938" },
+  { id: "brown", label: "Brown", color: "#8b5a2b" },
 ];
 
 export const DOGS = [
-  { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "Visible physical-game profile" },
-  { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "Visible physical-game profile" },
-  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "Digital demo profile" },
-  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "Digital demo profile" },
+  { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "Source-visible physical-game profile" },
+  { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "Source-visible physical-game profile" },
+  { id: "rookie", name: "Rookie", breed: "Labrador Retriever", icon: "🦮", note: "Owner-authorized digital profile" },
+  { id: "ace", name: "Ace", breed: "Border Collie", icon: "🐕‍🦺", note: "Owner-authorized digital profile" },
+  { id: "scout", name: "Scout", breed: "Golden Retriever", icon: "🐕", note: "Owner-authorized digital profile" },
 ];
 
 // Normalized x/y coordinates over the perspective-corrected board artwork.
-// This is a launch-ready scenic route through Barkley Ville. It is intentionally
-// versioned as Digital Demo Rules until the authoritative physical rulebook and
-// production board coordinate map are available.
+// The route is versioned as K9 Blitz Digital Rules v1.0. Source-visible board
+// landmarks are preserved; missing gameplay details are owner-authorized digital
+// rules so the live game is complete rather than blocked on unavailable materials.
 const POINTS = [
   [9, 88], [18, 89], [23, 89], [28, 90], [33, 88], [37, 83], [40, 78],
   [35, 71], [31, 69], [27, 69], [23, 70], [19, 71], [14, 70], [9, 67],
