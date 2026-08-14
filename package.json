@@ -1,12 +1,13 @@
 {
   "name": "k9-blitz",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test packages/game-engine/src/*.test.ts",
+    "test": "node --test packages/game-engine/src/*.test.ts && node --test apps/web/test/*.test.mjs",
+    "test:web": "node --test apps/web/test/*.test.mjs",
     "typecheck": "npx --yes --package typescript@6.0.2 tsc -p tsconfig.json",
     "qa": "npm run typecheck && npm test"
   },
