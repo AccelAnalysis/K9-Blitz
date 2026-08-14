@@ -1,0 +1,6 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { K9_BLITZ_PRODUCTION_BOARD, K9_BLITZ_PRODUCTION_SPACE_COUNT, K9_BLITZ_PAWN_ASSETS, validateBoardTopology, walkBoard } from "../dist/index.js";
+test("production board is complete, connected, and release-backed",()=>{assert.equal(K9_BLITZ_PRODUCTION_BOARD.source.kind,"production-art");assert.equal(K9_BLITZ_PRODUCTION_BOARD.source.assetPath,"assets/board-production.svg");assert.equal(K9_BLITZ_PRODUCTION_SPACE_COUNT,72);assert.equal(K9_BLITZ_PRODUCTION_BOARD.spaces.length,72);assert.deepEqual(validateBoardTopology(K9_BLITZ_PRODUCTION_BOARD),[]);assert.equal(K9_BLITZ_PRODUCTION_BOARD.startSpaceId,"space-0");assert.equal(K9_BLITZ_PRODUCTION_BOARD.finishSpaceId,"space-71");assert.ok(K9_BLITZ_PRODUCTION_BOARD.spaces.every(space=>space.confidence!=="provisional"));});
+test("production route walks from START to FINISH without ambiguity",()=>{const path=walkBoard(K9_BLITZ_PRODUCTION_BOARD,"space-0",71);assert.equal(path.length,71);assert.equal(path.at(-1)?.id,"space-71");});
+test("all five physical pawn colors have production artwork",()=>{assert.deepEqual(K9_BLITZ_PAWN_ASSETS.map(asset=>asset.color),["red","blue","green","yellow","brown"]);assert.ok(K9_BLITZ_PAWN_ASSETS.every(asset=>asset.assetPath.endsWith(".svg")));});
