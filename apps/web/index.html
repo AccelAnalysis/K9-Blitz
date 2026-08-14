@@ -26,7 +26,7 @@
     </header>
 
     <div class="rules-banner" role="note">
-      <strong>Launch edition:</strong> local/pass-and-play is fully playable using Digital Demo Rules. The physical rulebook and production component inventory are still required for exact rule fidelity.
+      <strong>K9 Blitz Digital Rules v1.0:</strong> missing physical-rule details have been completed as owner-authorized digital rules. Local and solo play are fully supported here; the online-room domain is implemented but still requires a deployed authoritative multiplayer service.
     </div>
 
     <main class="game-layout">
@@ -128,7 +128,7 @@
         <span class="paw-badge">🐾</span>
         <span class="eyebrow">Welcome to Barkley Ville</span>
         <h2 id="setupTitle">Start K9 Blitz</h2>
-        <p>Set up 2–4 trainers for local pass-and-play. You can also make any seat a computer player.</p>
+        <p>Set up 2–5 trainers. Seat 1 is the human host; any later seat can be another human or a computer player. With one human and computer opponents, the game operates as Solo vs AI.</p>
       </div>
 
       <div class="resume-card" id="resumeCard" hidden>
@@ -141,10 +141,10 @@
 
       <div class="mode-grid">
         <button class="mode-card selected" type="button" aria-pressed="true">
-          <span>👥</span><strong>Local Game</strong><small>Pass-and-play on this device</small>
+          <span>👥</span><strong>Local / Solo</strong><small>Pass-and-play or add computer opponents</small>
         </button>
-        <button class="mode-card" type="button" disabled title="Online rooms require a server-backed authoritative host.">
-          <span>🌐</span><strong>Online Room</strong><small>Server-backed mode coming next</small>
+        <button class="mode-card" type="button" disabled title="Online rooms require a deployed server-backed authoritative host.">
+          <span>🌐</span><strong>Online Room</strong><small>Domain ready · service deployment pending</small>
         </button>
       </div>
 
@@ -154,13 +154,14 @@
           <option value="2">2 players</option>
           <option value="3">3 players</option>
           <option value="4">4 players</option>
+          <option value="5">5 players</option>
         </select>
       </div>
       <div class="player-setup-list" id="playerSetupList"></div>
 
       <div class="rules-disclosure">
-        <strong>Digital Demo Rules v0.1</strong>
-        <span>Roll two dice, move along the scenic Barkley Ville route, resolve training spaces/cards, collect Paw Tokens, progress on the Competition Track, and be first to Finish.</span>
+        <strong>K9 Blitz Digital Rules v1.0</strong>
+        <span>Seat 1 starts; turns proceed in seat order. Every trainer has a unique pawn and dog. Trainer Cards are public. Roll two dice, resolve Barkley Ville spaces and cards, and be first to reach Finish.</span>
       </div>
 
       <button class="primary-button" id="startGameButton" type="button">Start Game</button>
@@ -181,16 +182,16 @@
   <div class="modal-backdrop" id="helpModal" hidden>
     <section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
       <button class="modal-close" id="helpCloseButton" type="button" aria-label="Close help">×</button>
-      <span class="eyebrow">Digital Demo Rules</span>
+      <span class="eyebrow">K9 Blitz Digital Rules v1.0</span>
       <h2 id="helpTitle">How to Play</h2>
       <div class="help-grid">
-        <article><span>🎲</span><h3>1. Roll</h3><p>On your turn, roll two dice. Your pawn hops one space at a time through Barkley Ville.</p></article>
-        <article><span>🐾</span><h3>2. Train</h3><p>Special spaces can award Paw Tokens, advance your Competition Track, trigger a Vet Check, or draw a Trainer Card.</p></article>
-        <article><span>🏆</span><h3>3. Finish</h3><p>The first trainer to reach the Finish podium wins this digital demo ruleset.</p></article>
+        <article><span>🎲</span><h3>1. Roll</h3><p>Seat 1 begins. On your turn, roll two dice and move your pawn one space at a time through Barkley Ville.</p></article>
+        <article><span>🐾</span><h3>2. Train</h3><p>Special spaces can award Paw Tokens, advance your Competition Track, trigger a Vet Check, or draw a public Trainer Card.</p></article>
+        <article><span>🏆</span><h3>3. Finish</h3><p>The first trainer to reach the Finish podium wins K9 Blitz Digital Rules v1.0.</p></article>
       </div>
       <div class="source-note">
-        <strong>Rule-fidelity note</strong>
-        <p>The board photograph establishes the visual board, dice, pawns, Trainer Cards, dog profiles, tokens, named action spaces, and K9 Competition Track. Exact physical-game card effects, movement rules, token meanings, competition requirements, and victory conditions are not yet present in the repository. This launch keeps those assumptions isolated in a clearly versioned demo ruleset so authoritative rules can replace them without redesigning the UI.</p>
+        <strong>Rule provenance</strong>
+        <p>The physical reference establishes the Barkley Ville board, two dice, five visible pawn colors, Trainer Cards, dog profiles including Max and Luna, tokens, named action spaces, and the K9 Competition Track. Where the available materials do not establish an exact rule or component detail, the game owner has authorized a versioned digital rule so the game can be complete and playable. Those synthesized rules are labeled owner-authorized rather than source-transcribed.</p>
       </div>
     </section>
   </div>
