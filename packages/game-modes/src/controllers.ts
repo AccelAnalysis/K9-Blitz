@@ -1,11 +1,13 @@
-import { GameModesError } from "./errors.js";
-import type { LegalAction, TypedCommand } from "./types.js";
+import { GameModesError } from "./errors.ts";
+import type { LegalAction, RevisionAwarePlayerCommand } from "./types.ts";
 
-export interface PlayerController<TCommand extends TypedCommand = TypedCommand> {
+export interface PlayerController<
+  TCommand extends RevisionAwarePlayerCommand = RevisionAwarePlayerCommand,
+> {
   chooseAction(legalActions: readonly LegalAction<TCommand>[]): Promise<TCommand>;
 }
 
-export class QueuedHumanController<TCommand extends TypedCommand>
+export class QueuedHumanController<TCommand extends RevisionAwarePlayerCommand>
   implements PlayerController<TCommand>
 {
   #resolver: ((command: TCommand) => void) | undefined;
@@ -42,27 +44,26 @@ export class QueuedHumanController<TCommand extends TypedCommand>
   }
 }
 
-export class ComputerController<TCommand extends TypedCommand>
+/**
+ * Deterministic baseline CPU controller. It never rolls its own randomness or
+ * bypasses the rules engine: it can only choose among legal commands supplied
+ * by the authoritative layer. Highest score wins; ties keep legal-action order.
+ */
+export class ComputerController<TCommand extends RevisionAwarePlayerCommand>
   implements PlayerController<TCommand>
 {
-  private readonly tieBreaker: () => number;
-
-  constructor(tieBreaker: () => number = Math.random) {
-    this.tieBreaker = tieBreaker;
-  }
-
   async chooseAction(legalActions: readonly LegalAction<TCommand>[]): Promise<TCommand> {
     if (legalActions.length === 0) {
       throw new GameModesError("NO_LEGAL_ACTIONS", "No legal actions are available.");
     }
 
-    const highestScore = Math.max(...legalActions.map((action) => action.scoreHint ?? 0));
-    const best = legalActions.filter((action) => (action.scoreHint ?? 0) === highestScore);
-    const index = Math.min(
-      best.length - 1,
-      Math.max(0, Math.floor(this.tieBreaker() * best.length)),
-    );
-    const selected = best[index];
+    let selected = legalActions[0];
+    for (const candidate of legalActions.slice(1)) {
+      if ((candidate.scoreHint ?? 0) > (selected?.scoreHint ?? 0)) {
+        selected = candidate;
+      }
+    }
+
     if (!selected) {
       throw new GameModesError("NO_LEGAL_ACTIONS", "No legal action could be selected.");
     }
