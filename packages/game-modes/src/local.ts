@@ -1,5 +1,5 @@
-import { GameModesError } from "./errors.js";
-import type { LobbyState, Player } from "./types.js";
+import { GameModesError } from "./errors.ts";
+import type { LobbyState, Player } from "./types.ts";
 
 export interface LocalTurnHandoff {
   readonly previousPlayerId: string;
@@ -7,6 +7,10 @@ export interface LocalTurnHandoff {
   readonly requiresPrivacyGate: boolean;
 }
 
+/**
+ * Presentation/session helper only. It never determines who goes next; the
+ * authoritative Rules/Turn engine supplies the next player id.
+ */
 export class LocalPassAndPlaySession {
   readonly #players: readonly Player[];
   #activePlayerId: string;
@@ -29,6 +33,7 @@ export class LocalPassAndPlaySession {
         "The lobby must be closed for play before a local session starts.",
       );
     }
+
     this.#players = [...lobby.players];
     this.#activePlayerId = this.requirePlayer(initialActivePlayerId).id;
     this.privateInformationExists = privateInformationExists;

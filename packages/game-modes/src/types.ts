@@ -36,7 +36,8 @@ export type LobbyStatus = "open" | "starting" | "closed";
 export type DogAssignmentMode =
   | "player_choice"
   | "random"
-  | "rules_defined";
+  | "rules_defined"
+  | "unresolved";
 
 export interface GameConfiguration {
   readonly mode: GameMode;
@@ -85,20 +86,30 @@ export interface JoinPlayerInput {
   readonly userId?: string;
 }
 
-export interface CommandEnvelope<TCommand = unknown> {
+/**
+ * Structural match for the game-engine command envelope plus a command type.
+ * The multiplayer/session layer may preflight this shape, but the game engine
+ * remains authoritative and must validate it again before mutation.
+ */
+export interface RevisionAwarePlayerCommand {
+  readonly type: string;
+  readonly commandId: string;
+  readonly actorPlayerId: string;
+  readonly expectedRevision: number;
+}
+
+export interface PlayerCommandRequest<
+  TCommand extends RevisionAwarePlayerCommand = RevisionAwarePlayerCommand,
+> {
   readonly gameId: string;
-  readonly playerId: string;
   readonly command: TCommand;
 }
 
 export interface AuthoritativeTurnView {
   readonly gameId: string;
+  readonly revision: number;
   readonly activePlayerId: string;
   readonly legalCommandTypes: readonly string[];
-}
-
-export interface TypedCommand {
-  readonly type: string;
 }
 
 export interface OnlinePlayerSession {
@@ -109,7 +120,15 @@ export interface OnlinePlayerSession {
   readonly reconnectToken: string;
 }
 
-export interface LegalAction<TCommand extends TypedCommand = TypedCommand> {
+export interface LegalAction<
+  TCommand extends RevisionAwarePlayerCommand = RevisionAwarePlayerCommand,
+> {
   readonly command: TCommand;
   readonly scoreHint?: number;
+}
+
+export interface AuthoritativeSnapshot<TState> {
+  readonly gameId: string;
+  readonly revision: number;
+  readonly state: TState;
 }

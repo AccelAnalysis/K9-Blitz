@@ -1,26 +1,38 @@
-import { GameModesError } from "./errors.js";
+import { GameModesError } from "./errors.ts";
 import type {
   AuthoritativeTurnView,
-  CommandEnvelope,
-  TypedCommand,
-} from "./types.js";
+  PlayerCommandRequest,
+  RevisionAwarePlayerCommand,
+} from "./types.ts";
 
-export function authorizePlayerCommand<TCommand extends TypedCommand>(
-  envelope: CommandEnvelope<TCommand>,
+/**
+ * Defense-in-depth preflight for a multiplayer/session boundary.
+ * The game engine is still authoritative and must repeat revision, player,
+ * phase, and command validation before mutating GameState.
+ */
+export function preflightPlayerCommand<TCommand extends RevisionAwarePlayerCommand>(
+  request: PlayerCommandRequest<TCommand>,
   turn: AuthoritativeTurnView,
 ): void {
-  if (envelope.gameId !== turn.gameId) {
+  if (request.gameId !== turn.gameId) {
     throw new GameModesError("GAME_ID_MISMATCH", "The command targets a different game.");
   }
 
-  if (envelope.playerId !== turn.activePlayerId) {
+  if (request.command.expectedRevision !== turn.revision) {
+    throw new GameModesError(
+      "STALE_STATE",
+      `Expected revision ${request.command.expectedRevision}; current revision is ${turn.revision}.`,
+    );
+  }
+
+  if (request.command.actorPlayerId !== turn.activePlayerId) {
     throw new GameModesError("NOT_YOUR_TURN", "Only the active player may perform this command.");
   }
 
-  if (!turn.legalCommandTypes.includes(envelope.command.type)) {
+  if (!turn.legalCommandTypes.includes(request.command.type)) {
     throw new GameModesError(
       "ILLEGAL_COMMAND",
-      `${envelope.command.type} is not legal in the current rules-engine state.`,
+      `${request.command.type} is not legal in the current rules-engine state.`,
     );
   }
 }
