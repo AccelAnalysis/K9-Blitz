@@ -19,7 +19,7 @@ The game owner has explicitly authorized completion of missing behavior. Therefo
 - FINISH: `space-71`
 - Dice: two standard six-sided dice
 - Competition Track maximum: 8
-- Paw Token supply: 48 token instances
+- Paw Token starting bag: 48 concrete markers, with virtual replenishment if required
 - Trainer Card deck: 12 immediate-resolution cards
 
 ## Objective
@@ -38,7 +38,7 @@ The K9 Competition Track and Paw Tokens record how successfully each trainer dev
    - 0 Paw Tokens;
    - 0/8 Competition progress;
    - 0 Trainer Cards drawn.
-6. Initialize the 48-token Paw Token bag.
+6. Initialize the 48-marker Paw Token bag.
 7. Initialize the 12-card Trainer deck.
 8. Turn order is seat order; seat 1 begins.
 
@@ -50,9 +50,10 @@ A normal turn is automatic after the player rolls:
 2. **Move** forward by the sum.
 3. If movement would pass FINISH, stop at `space-71`; an exact roll is not required.
 4. **Resolve the landing space** exactly once.
-5. Resolve all Trainer Card effects and chained movement/landing effects in deterministic causal order.
-6. Check for victory.
-7. If no player has won, end the turn automatically and advance to the next trainer, unless a Second Chance card granted one immediate extra turn.
+5. Resolve all resulting Trainer Card effects in deterministic causal order.
+6. Card-driven movement changes pawn position but **does not trigger a second landing-space effect** during that card resolution.
+7. Check for victory.
+8. If no player has won, end the turn automatically and advance to the next trainer, unless a Second Chance card granted one immediate extra turn.
 
 Doubles have no special rule in v1.0.
 
@@ -95,18 +96,18 @@ All unlisted non-FINISH spaces are ordinary Barkley Ville travel spaces, except 
 | 70 | Paw Bonus — gain 1 Paw Token |
 | 71 | FINISH — immediately wins the game |
 
-If a Trainer Card moves a pawn onto a special space, that new landing space resolves normally. Chained movement can therefore trigger another Trainer Card or another special-space effect.
+Normal dice movement triggers the destination space. Movement created by a Trainer Card does not trigger that destination's board-space action. This keeps every rolled landing to one board-space resolution and prevents recursive card/space chains.
 
 ## Paw Tokens
 
-Paw Tokens are finite physical instances in digital state.
+Paw Tokens are score/progress markers in Digital Rules v1.0.
 
-- The bag begins with 48 Paw Tokens.
-- Token awards draw without replacement from the current bag.
+- Digital state begins with 48 uniquely identified Paw Tokens to mirror the visible tabletop token supply.
+- Awards draw unique token instances from the current bag.
 - Vet Check spends up to 1 token; a trainer with zero tokens does not go negative.
-- Spent tokens move to the token discard pool.
-- If the bag becomes empty, spent/discarded tokens recycle into the bag.
-- If all 48 tokens are currently held by players and none are discarded, an award grants only the number physically available, which may be zero.
+- Spent tokens move to the token discard pool and may recycle into the bag.
+- **An earned Paw Token award is never denied because all existing markers are held.** If the initial/recycled markers cannot satisfy an award, the digital engine creates additional unique virtual Paw Token instances.
+- The browser edition may display this model simply as a token count; the authoritative engine preserves unique token identities for state integrity.
 
 Paw Tokens are tracked for player achievement/history and final winner metadata in v1.0.
 
@@ -130,15 +131,15 @@ Trainer Cards resolve immediately, then move to the discard pile. They are not h
 |---|---|
 | Good Behavior! | Gain 2 Paw Tokens |
 | Quick Study | Competition +1 |
-| Zoomies! | Move forward 2 spaces; resolve the new landing space |
+| Zoomies! | Move forward 2 spaces; do not resolve the destination space |
 | Water Break | No state change |
 | Treat Pouch | Gain 1 Paw Token |
 | Practice Pays | Competition +2 |
-| Squirrel! | Move back 1 space; resolve the new landing space |
+| Squirrel! | Move back 1 space; do not resolve the destination space |
 | Second Chance | Take one immediate extra turn after the current turn |
 | Park Pals | Gain 1 Paw Token and Competition +1 |
 | Freshly Groomed | Gain 2 Paw Tokens |
-| Trainer's Bonus | Move forward 1 space, resolve that landing space, then gain 1 Paw Token |
+| Trainer's Bonus | Move forward 1 space without resolving the destination, then gain 1 Paw Token |
 | Calm & Focused | Competition +1 |
 
 ### Extra-turn rule
@@ -147,9 +148,9 @@ Second Chance grants **exactly one** extra turn. The marker is bound to the turn
 
 ## Victory
 
-Victory is evaluated after movement and all mandatory landing/card effects have resolved.
+Victory is evaluated after normal movement and all mandatory landing/card effects have resolved.
 
-A player wins immediately when their pawn is on `space-71`.
+A player wins immediately when their pawn is on `space-71`, including when a Trainer Card moves the pawn there.
 
 The game then becomes `completed`; normal gameplay commands are rejected. The winner record includes:
 
