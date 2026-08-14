@@ -10,11 +10,9 @@ export interface LocalTurnHandoff {
 export class LocalPassAndPlaySession {
   readonly #players: readonly Player[];
   #activeSeatIndex = 0;
+  private readonly privateInformationExists: boolean;
 
-  constructor(
-    lobby: LobbyState,
-    private readonly privateInformationExists: boolean,
-  ) {
+  constructor(lobby: LobbyState, privateInformationExists: boolean) {
     if (lobby.configuration.mode !== "local_pass_and_play") {
       throw new GameModesError(
         "INVALID_CONFIGURATION",
@@ -27,6 +25,7 @@ export class LocalPassAndPlaySession {
         "The lobby must be closed for play before a local session starts.",
       );
     }
+    this.privateInformationExists = privateInformationExists;
     this.#players = [...lobby.players].sort((a, b) => a.seatNumber - b.seatNumber);
   }
 
