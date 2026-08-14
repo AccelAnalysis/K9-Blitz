@@ -1,0 +1,24 @@
+{
+  "name": "@k9-blitz/board-map",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Board geometry, topology and pawn-placement primitives for K9 Blitz.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "assets"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
