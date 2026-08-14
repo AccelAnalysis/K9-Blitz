@@ -1,15 +1,24 @@
 # @k9-blitz/game-content-admin
 
-Domain package for K9 Blitz workstream 6: versioned content management, ruleset/content-pack snapshots, administration authorization, publication validation, asset inventory, and audit provenance.
+K9 Blitz workstream 6: versioned content administration, immutable release snapshots, publishing validation, permissions, audit provenance, help/settings/media records, and asset inventory.
 
-The catalog wraps the authoritative component definitions from `@k9-blitz/core-game` instead of creating competing card/dog/token/space/competition schemas.
+`src/baseGame.ts` imports the current owner-authorized Digital Rules v1 component definitions directly from `@k9-blitz/core-game` and wraps them administratively. It does not maintain a competing Dog/Card/Token/Space/Competition rules catalog.
 
-It intentionally does not choose a database, web framework, admin UI framework, or multiplayer transport. See `../../docs/GAME_CONTENT_ADMINISTRATION.md` for boundaries and integration guidance.
+Published authority:
 
-## Test
+- rules: `k9-blitz-digital-1.0`;
+- content: `launch-1.0`;
+- runtime components: `../core-game/src/baseGame.ts`;
+- machine-readable release summary: `../../content/base-game/catalog.json`;
+- browser projection: `../../apps/web/game-data.js`;
+- static Content Studio: `../../apps/web/admin.html`.
 
-The repository authority is Node 24+. From this package:
+The Content Studio can draft, validate, import/export, audit, and publish browser-local content without embedding GitHub credentials. Repository-wide promotion remains an explicit versioned GitHub change.
+
+Run the repository authority checks with:
 
 ```bash
-npm test
+npm run qa
 ```
+
+See `../../docs/GAME_CONTENT_ADMINISTRATION.md` for the complete architecture and promotion contract.
