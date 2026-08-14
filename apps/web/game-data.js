@@ -1,5 +1,5 @@
-export const RULES_VERSION = "digital-demo-0.1";
-export const CONTENT_VERSION = "launch-0.1";
+export const RULES_VERSION = "1.0.0";
+export const CONTENT_VERSION = "digital-base-1.0.0";
 
 export const PAWNS = [
   { id: "red", label: "Red", color: "#d83a35" },
@@ -11,14 +11,14 @@ export const PAWNS = [
 export const DOGS = [
   { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "Visible physical-game profile" },
   { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "Visible physical-game profile" },
-  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "Digital demo profile" },
-  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "Digital demo profile" },
+  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "Owner-authorized digital profile" },
+  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "Owner-authorized digital profile" },
 ];
 
 // Normalized x/y coordinates over the perspective-corrected board artwork.
-// This is a launch-ready scenic route through Barkley Ville. It is intentionally
-// versioned as Digital Demo Rules until the authoritative physical rulebook and
-// production board coordinate map are available.
+// This 72-space scenic route is the owner-authorized canonical logical route
+// for K9 Blitz Digital Rules v1.0. It may later be visually recalibrated to
+// improved artwork without silently changing the rules/content version.
 const POINTS = [
   [9, 88], [18, 89], [23, 89], [28, 90], [33, 88], [37, 83], [40, 78],
   [35, 71], [31, 69], [27, 69], [23, 70], [19, 71], [14, 70], [9, 67],
