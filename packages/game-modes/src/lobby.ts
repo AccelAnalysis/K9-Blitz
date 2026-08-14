@@ -47,6 +47,41 @@ function validateConfiguration(configuration: GameConfiguration): void {
   }
 }
 
+function validateParticipantForMode(
+  configuration: GameConfiguration,
+  participant: JoinPlayerInput,
+  isHost: boolean,
+): void {
+  if (participant.controllerType === "human_remote" && !participant.userId) {
+    throw new GameModesError(
+      "REMOTE_IDENTITY_REQUIRED",
+      "Remote human players require an authenticated userId.",
+    );
+  }
+
+  if (configuration.mode === "local_pass_and_play" && participant.controllerType === "human_remote") {
+    throw new GameModesError(
+      "INVALID_CONFIGURATION",
+      "Local pass-and-play does not accept remote-human controllers.",
+    );
+  }
+
+  if (configuration.mode === "online_private") {
+    if (participant.controllerType === "human_local") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Online private games do not accept local-human controllers.",
+      );
+    }
+    if (isHost && participant.controllerType !== "human_remote") {
+      throw new GameModesError(
+        "INVALID_CONFIGURATION",
+        "Online private games require a remote human host.",
+      );
+    }
+  }
+}
+
 function initialSeats(maximumPlayers: number): PlayerSeat[] {
   return Array.from({ length: maximumPlayers }, (_, index) => ({
     seatNumber: index + 1,
@@ -110,13 +145,7 @@ export function createLobby(input: {
   readonly configuration: GameConfiguration;
 }): LobbyState {
   validateConfiguration(input.configuration);
-
-  if (input.configuration.mode === "online_private" && input.host.controllerType !== "human_remote") {
-    throw new GameModesError(
-      "INVALID_CONFIGURATION",
-      "Online private games require a remote human host.",
-    );
-  }
+  validateParticipantForMode(input.configuration, input.host, true);
 
   const seats = initialSeats(input.configuration.maximumPlayers);
   const host: Player = {
@@ -162,12 +191,7 @@ export function joinPlayer(state: LobbyState, input: JoinPlayerInput): LobbyStat
     throw new GameModesError("PLAYER_LIMIT_REACHED", "The lobby is full.");
   }
 
-  if (input.controllerType === "human_remote" && !input.userId) {
-    throw new GameModesError(
-      "REMOTE_IDENTITY_REQUIRED",
-      "Remote human players require an authenticated userId.",
-    );
-  }
+  validateParticipantForMode(state.configuration, input, false);
 
   const seat = state.seats.find((candidate) => candidate.playerId === null);
   if (!seat) {
