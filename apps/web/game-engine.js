@@ -1,6 +1,6 @@
-import { BOARD_SPACES, CONTENT_VERSION, RULES_VERSION, TRAINER_CARDS } from "./game-data.js";
+import { BOARD_SPACES, CONTENT_VERSION, DIGITAL_RULES, RULES_VERSION, TRAINER_CARDS } from "./game-data.js";
 
-export const MAX_COMPETITION = 8;
+export const MAX_COMPETITION = DIGITAL_RULES.competitionMaximum;
 export const LAST_SPACE = BOARD_SPACES.length - 1;
 
 export function dieFromRandom(randomValue) {
@@ -24,8 +24,8 @@ export function advancePosition(position, amount) {
 }
 
 export function createGame(players, now = () => Date.now()) {
-  if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
-    throw new RangeError("Digital Demo Rules support 2-4 players");
+  if (!Array.isArray(players) || players.length < DIGITAL_RULES.players.min || players.length > DIGITAL_RULES.players.max) {
+    throw new RangeError(`K9 Blitz Digital Rules v${DIGITAL_RULES.displayVersion} support ${DIGITAL_RULES.players.min}-${DIGITAL_RULES.players.max} players`);
   }
   const ids = new Set();
   const pawnIds = new Set();
@@ -57,7 +57,7 @@ export function createGame(players, now = () => Date.now()) {
       cardsDrawn: 0,
     })),
     history: [
-      { id: `event-${startedAt}`, at: startedAt, type: "game", text: "Game started in Digital Demo Rules mode." },
+      { id: `event-${startedAt}`, at: startedAt, type: "game", text: `Game started with K9 Blitz Digital Rules v${DIGITAL_RULES.displayVersion}.` },
     ],
   };
 }

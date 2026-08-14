@@ -1,5 +1,20 @@
-export const RULES_VERSION = "digital-demo-0.1";
-export const CONTENT_VERSION = "launch-0.1";
+export const RULES_VERSION = "k9-blitz-digital-1.0";
+export const CONTENT_VERSION = "launch-1.0";
+
+export const DIGITAL_RULES = Object.freeze({
+  id: RULES_VERSION,
+  name: "K9 Blitz Digital Rules",
+  displayVersion: "1.0",
+  players: Object.freeze({ min: 2, max: 4 }),
+  turnOrder: "setup-order",
+  diceCount: 2,
+  movement: "sum-forward-clamp-at-finish",
+  resolveLandingOnce: true,
+  trainerCardMovementTriggersLanding: false,
+  competitionMaximum: 8,
+  victory: "first-to-finish",
+  hiddenInformation: false,
+});
 
 export const PAWNS = [
   { id: "red", label: "Red", color: "#d83a35" },
@@ -9,16 +24,14 @@ export const PAWNS = [
 ];
 
 export const DOGS = [
-  { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "Visible physical-game profile" },
-  { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "Visible physical-game profile" },
-  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "Digital demo profile" },
-  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "Digital demo profile" },
+  { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "K9 Blitz dog profile" },
+  { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "K9 Blitz dog profile" },
+  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "K9 Blitz Digital Rules v1 profile" },
+  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "K9 Blitz Digital Rules v1 profile" },
 ];
 
-// Normalized x/y coordinates over the perspective-corrected board artwork.
-// This is a launch-ready scenic route through Barkley Ville. It is intentionally
-// versioned as Digital Demo Rules until the authoritative physical rulebook and
-// production board coordinate map are available.
+// Normalized x/y coordinates over the board artwork.
+// This 72-space Barkley Ville route is authoritative for K9 Blitz Digital Rules v1.0.
 const POINTS = [
   [9, 88], [18, 89], [23, 89], [28, 90], [33, 88], [37, 83], [40, 78],
   [35, 71], [31, 69], [27, 69], [23, 70], [19, 71], [14, 70], [9, 67],
@@ -71,15 +84,15 @@ export const BOARD_SPACES = POINTS.map(([x, y], index) => ({
 export const TRAINER_CARDS = [
   { id: "good-behavior", title: "Good Behavior!", text: "Your dog nailed the exercise. Collect 2 Paw Tokens.", effect: { type: "tokens", amount: 2 }, icon: "⭐" },
   { id: "quick-study", title: "Quick Study", text: "Advance 1 Competition step.", effect: { type: "competition", amount: 1 }, icon: "🎓" },
-  { id: "zoomies", title: "Zoomies!", text: "Move ahead 2 spaces.", effect: { type: "move", amount: 2 }, icon: "💨" },
+  { id: "zoomies", title: "Zoomies!", text: "Move ahead 2 spaces. Do not resolve the destination space.", effect: { type: "move", amount: 2 }, icon: "💨" },
   { id: "water-break", title: "Water Break", text: "Take a breather. No movement change.", effect: { type: "none" }, icon: "💧" },
   { id: "treat-pouch", title: "Treat Pouch", text: "Collect 1 Paw Token.", effect: { type: "tokens", amount: 1 }, icon: "🦴" },
   { id: "practice-pays", title: "Practice Pays", text: "Advance 2 Competition steps.", effect: { type: "competition", amount: 2 }, icon: "🏅" },
-  { id: "distracted", title: "Squirrel!", text: "Move back 1 space.", effect: { type: "move", amount: -1 }, icon: "🐿️" },
+  { id: "distracted", title: "Squirrel!", text: "Move back 1 space. Do not resolve the destination space.", effect: { type: "move", amount: -1 }, icon: "🐿️" },
   { id: "second-chance", title: "Second Chance", text: "Take another turn after this one.", effect: { type: "extraTurn" }, icon: "🎲" },
   { id: "park-pals", title: "Park Pals", text: "Collect 1 Paw Token and advance 1 Competition step.", effect: { type: "combo", tokens: 1, competition: 1 }, icon: "🐾" },
   { id: "groomed", title: "Freshly Groomed", text: "Looking sharp! Collect 2 Paw Tokens.", effect: { type: "tokens", amount: 2 }, icon: "✨" },
-  { id: "training-bonus", title: "Trainer's Bonus", text: "Move ahead 1 space and collect 1 Paw Token.", effect: { type: "comboMove", move: 1, tokens: 1 }, icon: "📣" },
+  { id: "training-bonus", title: "Trainer's Bonus", text: "Move ahead 1 space and collect 1 Paw Token. Do not resolve the destination space.", effect: { type: "comboMove", move: 1, tokens: 1 }, icon: "📣" },
   { id: "calm-focus", title: "Calm & Focused", text: "Advance 1 Competition step.", effect: { type: "competition", amount: 1 }, icon: "🧠" },
 ];
 

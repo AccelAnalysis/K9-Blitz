@@ -26,7 +26,7 @@
     </header>
 
     <div class="rules-banner" role="note">
-      <strong>Launch edition:</strong> local/pass-and-play is fully playable using Digital Demo Rules. The physical rulebook and production component inventory are still required for exact rule fidelity.
+      <strong>K9 Blitz Digital Rules v1.0:</strong> 2–4 trainers, two dice, Paw Tokens, Trainer Cards, an 8-step Competition Track, and first to the Finish podium wins.
     </div>
 
     <main class="game-layout">
@@ -159,8 +159,8 @@
       <div class="player-setup-list" id="playerSetupList"></div>
 
       <div class="rules-disclosure">
-        <strong>Digital Demo Rules v0.1</strong>
-        <span>Roll two dice, move along the scenic Barkley Ville route, resolve training spaces/cards, collect Paw Tokens, progress on the Competition Track, and be first to Finish.</span>
+        <strong>K9 Blitz Digital Rules v1.0</strong>
+        <span>Roll two dice and move the total. Resolve the landing space once, collect and spend Paw Tokens, advance the 8-step Competition Track, draw Trainer Cards when instructed, and be first to reach Finish. An exact roll is not required.</span>
       </div>
 
       <button class="primary-button" id="startGameButton" type="button">Start Game</button>
@@ -181,16 +181,19 @@
   <div class="modal-backdrop" id="helpModal" hidden>
     <section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
       <button class="modal-close" id="helpCloseButton" type="button" aria-label="Close help">×</button>
-      <span class="eyebrow">Digital Demo Rules</span>
+      <span class="eyebrow">K9 Blitz Digital Rules v1.0</span>
       <h2 id="helpTitle">How to Play</h2>
       <div class="help-grid">
-        <article><span>🎲</span><h3>1. Roll</h3><p>On your turn, roll two dice. Your pawn hops one space at a time through Barkley Ville.</p></article>
-        <article><span>🐾</span><h3>2. Train</h3><p>Special spaces can award Paw Tokens, advance your Competition Track, trigger a Vet Check, or draw a Trainer Card.</p></article>
-        <article><span>🏆</span><h3>3. Finish</h3><p>The first trainer to reach the Finish podium wins this digital demo ruleset.</p></article>
+        <article><span>🎲</span><h3>1. Roll</h3><p>On your turn, roll two six-sided dice. Movement is the total of both dice; doubles have no extra effect.</p></article>
+        <article><span>🐕</span><h3>2. Move</h3><p>Move forward one space at a time. If the roll would pass Finish, stop on Finish—no exact roll is required.</p></article>
+        <article><span>🐾</span><h3>3. Resolve</h3><p>Resolve the space you land on once. Training and agility can advance Competition progress; rewards can add Paw Tokens; Vet Check can spend one token.</p></article>
+        <article><span>🃏</span><h3>4. Trainer Cards</h3><p>Trainer Cards resolve immediately. If a card moves your pawn, do not resolve the destination space from that card movement.</p></article>
+        <article><span>🏅</span><h3>5. Competition</h3><p>Your K9 Competition Track has 8 steps. Completing it is an achievement and is recorded in your final result.</p></article>
+        <article><span>🏆</span><h3>6. Win</h3><p>The first trainer to reach the Finish podium wins K9 Blitz immediately. Paw Tokens and Competition progress are shown with the winning result.</p></article>
       </div>
       <div class="source-note">
-        <strong>Rule-fidelity note</strong>
-        <p>The board photograph establishes the visual board, dice, pawns, Trainer Cards, dog profiles, tokens, named action spaces, and K9 Competition Track. Exact physical-game card effects, movement rules, token meanings, competition requirements, and victory conditions are not yet present in the repository. This launch keeps those assumptions isolated in a clearly versioned demo ruleset so authoritative rules can replace them without redesigning the UI.</p>
+        <strong>Digital rules authority</strong>
+        <p>K9 Blitz Digital Rules v1.0 are the owner-authorized rules for this digital edition. Visible physical-game concepts such as Barkley Ville, Trainer Cards, dog profiles, Paw Tokens, action spaces, and the K9 Competition Track are preserved; where legacy source material was silent, the digital behavior is intentionally defined and versioned as product design rather than left unresolved.</p>
       </div>
     </section>
   </div>
