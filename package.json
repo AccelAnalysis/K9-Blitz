@@ -6,10 +6,12 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test packages/game-engine/src/*.test.ts packages/game-modes/src/*.test.ts packages/player-interface/src/lib/*.test.ts packages/player-interface/src/adapters/*.test.ts && node --test apps/web/test/*.test.mjs",
+    "test": "node tools/qa/run-tests.mjs",
     "test:web": "node --test apps/web/test/*.test.mjs",
     "typecheck": "npx --yes --package typescript@6.0.2 tsc -p tsconfig.json",
-    "qa": "npm run typecheck && npm test"
+    "qa:repo": "node tools/qa/repository-audit.mjs",
+    "build:pages": "node tools/qa/build-pages.mjs",
+    "qa": "npm run typecheck && npm run qa:repo && npm test && npm run build:pages"
   },
   "type": "module"
 }
