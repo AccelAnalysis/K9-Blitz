@@ -2,15 +2,83 @@ import { access, appendFile, copyFile, mkdir, readFile, rm, writeFile } from "no
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-const repoRoot=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
-const outDir=resolve(repoRoot,process.env.K9_PAGES_OUT||"_site");
-const files=[["apps/web/index.html","index.html"],["apps/web/styles.css","styles.css"],["apps/web/app.js","app.js"],["apps/web/game-data.js","game-data.js"],["apps/web/game-engine.js","game-engine.js"],["apps/web/assets/favicon.svg","assets/favicon.svg"],["packages/board-map/assets/board-production.svg","assets/board.svg"],["packages/board-map/assets/pawns/pawn-red.svg","assets/pawns/pawn-red.svg"],["packages/board-map/assets/pawns/pawn-blue.svg","assets/pawns/pawn-blue.svg"],["packages/board-map/assets/pawns/pawn-green.svg","assets/pawns/pawn-green.svg"],["packages/board-map/assets/pawns/pawn-yellow.svg","assets/pawns/pawn-yellow.svg"],["packages/board-map/assets/pawns/pawn-brown.svg","assets/pawns/pawn-brown.svg"]];
-await rm(outDir,{recursive:true,force:true});
-for(const [source,destination] of files){const sourcePath=resolve(repoRoot,source);try{await access(sourcePath)}catch{throw new Error(`Pages source is missing: ${source}`)}const destinationPath=resolve(outDir,destination);await mkdir(dirname(destinationPath),{recursive:true});await copyFile(sourcePath,destinationPath)}
-const pawnCssPath=resolve(repoRoot,"apps/web/pawns-production.css");try{await access(pawnCssPath)}catch{throw new Error("Pages source is missing: apps/web/pawns-production.css")}await appendFile(resolve(outDir,"styles.css"),`\n\n${await readFile(pawnCssPath,"utf8")}`,"utf8");await writeFile(resolve(outDir,".nojekyll"),"","utf8");
-for(const moduleFile of ["app.js","game-data.js","game-engine.js"]){const syntax=spawnSync(process.execPath,["--check",resolve(outDir,moduleFile)],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1)}
-const html=await readFile(resolve(outDir,"index.html"),"utf8");if(!/<html\s+[^>]*lang=["'][^"']+["']/i.test(html))throw new Error("Pages index.html must declare a document language.");if(!/<meta\s+[^>]*name=["']viewport["']/i.test(html))throw new Error("Pages index.html must declare a viewport.");if(!/<main\b/i.test(html))throw new Error("Pages index.html must contain a main landmark.");
-function assertInsideArtifact(target,label){const pathFromRoot=relative(outDir,target);if(pathFromRoot.startsWith("..")||isAbsolute(pathFromRoot))throw new Error(`Pages reference escapes artifact root: ${label}`)}
-const localRefs=new Set();for(const match of html.matchAll(/(?:src|href)=["'](\.\/[^"'#?]+)(?:[?#][^"']*)?["']/g))localRefs.add(match[1]);for(const ref of localRefs){const target=resolve(outDir,ref.slice(2));assertInsideArtifact(target,ref);try{await access(target)}catch{throw new Error(`Pages index references missing artifact: ${ref}`)}}
-for(const moduleFile of ["app.js","game-engine.js"]){const source=await readFile(resolve(outDir,moduleFile),"utf8");for(const match of source.matchAll(/(?:from\s+|import\s*\()\s*["'](\.\/[^"']+)["']/g)){const target=resolve(outDir,match[1].slice(2));assertInsideArtifact(target,match[1]);try{await access(target)}catch{throw new Error(`${moduleFile} imports missing Pages module: ${match[1]}`)}}}
-const boardSvg=await readFile(resolve(outDir,"assets/board.svg"),"utf8");if(!/<svg\b/i.test(boardSvg))throw new Error("Pages board artifact is not valid SVG content.");if(!/BARKLEY VILLE/i.test(boardSvg)||!/K9 COMPETITION TRACK/i.test(boardSvg))throw new Error("Pages board artifact is not the production Barkley Ville board.");for(const color of ["red","blue","green","yellow","brown"]){try{await access(resolve(outDir,`assets/pawns/pawn-${color}.svg`))}catch{throw new Error(`Pages production pawn is missing: ${color}`)}}console.log(`GitHub Pages artifact assembled and verified at ${outDir}.`);
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const outDir = resolve(repoRoot, process.env.K9_PAGES_OUT || "_site");
+const files = [
+  ["apps/web/index.html", "index.html"],
+  ["apps/web/styles.css", "styles.css"],
+  ["apps/web/app.js", "app.js"],
+  ["apps/web/game-data.js", "game-data.js"],
+  ["apps/web/game-engine.js", "game-engine.js"],
+  ["apps/web/admin.html", "admin.html"],
+  ["apps/web/admin.css", "admin.css"],
+  ["apps/web/admin.js", "admin.js"],
+  ["apps/web/assets/favicon.svg", "assets/favicon.svg"],
+  ["packages/board-map/assets/board-production.svg", "assets/board.svg"],
+  ["packages/board-map/assets/pawns/pawn-red.svg", "assets/pawns/pawn-red.svg"],
+  ["packages/board-map/assets/pawns/pawn-blue.svg", "assets/pawns/pawn-blue.svg"],
+  ["packages/board-map/assets/pawns/pawn-green.svg", "assets/pawns/pawn-green.svg"],
+  ["packages/board-map/assets/pawns/pawn-yellow.svg", "assets/pawns/pawn-yellow.svg"],
+  ["packages/board-map/assets/pawns/pawn-brown.svg", "assets/pawns/pawn-brown.svg"]
+];
+
+await rm(outDir, { recursive: true, force: true });
+for (const [source, destination] of files) {
+  const sourcePath = resolve(repoRoot, source);
+  try { await access(sourcePath); } catch { throw new Error(`Pages source is missing: ${source}`); }
+  const destinationPath = resolve(outDir, destination);
+  await mkdir(dirname(destinationPath), { recursive: true });
+  await copyFile(sourcePath, destinationPath);
+}
+
+const pawnCssPath = resolve(repoRoot, "apps/web/pawns-production.css");
+try { await access(pawnCssPath); } catch { throw new Error("Pages source is missing: apps/web/pawns-production.css"); }
+await appendFile(resolve(outDir, "styles.css"), `\n\n${await readFile(pawnCssPath, "utf8")}`, "utf8");
+await writeFile(resolve(outDir, ".nojekyll"), "", "utf8");
+
+for (const moduleFile of ["app.js", "game-data.js", "game-engine.js", "admin.js"]) {
+  const syntax = spawnSync(process.execPath, ["--check", resolve(outDir, moduleFile)], { stdio: "inherit" });
+  if (syntax.status !== 0) process.exit(syntax.status ?? 1);
+}
+
+function assertInsideArtifact(target, label) {
+  const pathFromRoot = relative(outDir, target);
+  if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) throw new Error(`Pages reference escapes artifact root: ${label}`);
+}
+
+async function validateHtmlDocument(fileName) {
+  const html = await readFile(resolve(outDir, fileName), "utf8");
+  if (!/<html\s+[^>]*lang=["'][^"']+["']/i.test(html)) throw new Error(`${fileName} must declare a document language.`);
+  if (!/<meta\s+[^>]*name=["']viewport["']/i.test(html)) throw new Error(`${fileName} must declare a viewport.`);
+  if (!/<main\b/i.test(html)) throw new Error(`${fileName} must contain a main landmark.`);
+
+  const localRefs = new Set();
+  for (const match of html.matchAll(/(?:src|href)=["'](\.\/[^"'#?]+)(?:[?#][^"']*)?["']/g)) localRefs.add(match[1]);
+  for (const ref of localRefs) {
+    const target = resolve(outDir, ref.slice(2));
+    assertInsideArtifact(target, `${fileName}:${ref}`);
+    try { await access(target); } catch { throw new Error(`${fileName} references missing artifact: ${ref}`); }
+  }
+}
+
+await validateHtmlDocument("index.html");
+await validateHtmlDocument("admin.html");
+
+for (const moduleFile of ["app.js", "game-engine.js", "admin.js"]) {
+  const source = await readFile(resolve(outDir, moduleFile), "utf8");
+  for (const match of source.matchAll(/(?:from\s+|import\s*\()\s*["'](\.\/[^"']+)["']/g)) {
+    const target = resolve(outDir, match[1].slice(2));
+    assertInsideArtifact(target, match[1]);
+    try { await access(target); } catch { throw new Error(`${moduleFile} imports missing Pages module: ${match[1]}`); }
+  }
+}
+
+const boardSvg = await readFile(resolve(outDir, "assets/board.svg"), "utf8");
+if (!/<svg\b/i.test(boardSvg)) throw new Error("Pages board artifact is not valid SVG content.");
+if (!/BARKLEY VILLE/i.test(boardSvg) || !/K9 COMPETITION TRACK/i.test(boardSvg)) throw new Error("Pages board artifact is not the production Barkley Ville board.");
+for (const color of ["red", "blue", "green", "yellow", "brown"]) {
+  try { await access(resolve(outDir, `assets/pawns/pawn-${color}.svg`)); } catch { throw new Error(`Pages production pawn is missing: ${color}`); }
+}
+
+console.log(`GitHub Pages game + Content Studio artifact assembled and verified at ${outDir}.`);

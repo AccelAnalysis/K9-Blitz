@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1688c9" />
+  <title>K9 Blitz — Content Studio</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./admin.css" />
+</head>
+<body>
+  <header class="studio-header">
+    <div>
+      <span class="eyebrow">K9 Blitz</span>
+      <h1>Content Studio</h1>
+      <p>Owner-authorized game content, configuration, local publishing, and audit history.</p>
+    </div>
+    <div class="header-actions">
+      <a class="button secondary" href="./index.html">← Return to Game</a>
+      <button class="button secondary" id="exportButton" type="button">Export JSON</button>
+      <label class="button secondary file-button">Import JSON<input id="importInput" type="file" accept="application/json" /></label>
+      <button class="button danger" id="resetButton" type="button">Reset Baseline</button>
+      <button class="button primary" id="publishButton" type="button">Publish Locally</button>
+    </div>
+  </header>
+
+  <div class="notice">
+    <strong>Static-host administration:</strong> changes are stored only in this browser and immediately become the active content after you publish and reload the game. Export JSON to promote the same content into the repository-wide published baseline.
+  </div>
+
+  <main class="studio-layout">
+    <aside class="sidebar">
+      <div class="version-card">
+        <span>Active rules</span><strong id="rulesVersion">—</strong>
+        <span>Content</span><strong id="contentVersion">—</strong>
+        <span>Status</span><strong id="publishStatus">Baseline</strong>
+      </div>
+      <nav id="categoryNav" class="category-nav" aria-label="Content categories"></nav>
+      <section class="audit-panel">
+        <div class="section-title"><h2>Audit</h2><button id="clearAuditButton" type="button">Clear</button></div>
+        <ol id="auditList"></ol>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="dashboard" id="dashboard"></div>
+      <div class="toolbar">
+        <div>
+          <span class="eyebrow">Catalog</span>
+          <h2 id="categoryTitle">Trainer Cards</h2>
+        </div>
+        <input id="searchInput" type="search" placeholder="Search this category…" aria-label="Search content" />
+      </div>
+      <div class="content-grid">
+        <section class="item-list" id="itemList" aria-label="Content items"></section>
+        <section class="editor-panel">
+          <div class="editor-header">
+            <div><span class="eyebrow">Selected item</span><h3 id="editorTitle">Choose an item</h3></div>
+            <span class="status-pill" id="draftStatus">Published</span>
+          </div>
+          <p id="editorHint">Select a content record to edit its JSON representation.</p>
+          <textarea id="jsonEditor" spellcheck="false" aria-label="Content JSON editor" disabled></textarea>
+          <div class="validation" id="validationMessage" hidden></div>
+          <div class="editor-actions">
+            <button class="button secondary" id="revertItemButton" type="button" disabled>Revert Item</button>
+            <button class="button primary" id="saveDraftButton" type="button" disabled>Save Draft</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>
