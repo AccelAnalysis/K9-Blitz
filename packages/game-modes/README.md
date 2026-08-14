@@ -1,91 +1,98 @@
 # K9 Blitz Game Modes & Players
 
-This package implements Workstream 5 from the project README: **Game Lobby, Local Multiplayer, Online Multiplayer, and Computer Players**.
+This package implements Workstream 5: **Game Lobby, Local Multiplayer, Online Multiplayer, and Computer Players**.
 
-## Design boundary
+## Authority boundary
 
-This package owns participant/session orchestration. It deliberately does **not** implement board movement, dice, card effects, turn progression, or victory rules. Those belong to the Rules / Turns / Game State and Core Mechanics workstreams.
+Game Modes & Players owns **who is participating and how commands reach the game**. It does not own dice outcomes, board movement, card effects, turn order, or victory. `packages/game-engine` remains the sole authority for gameplay state transitions.
 
-Physical-game facts that are not yet supported by an authoritative rulebook remain configuration-driven rather than guessed:
+The subsystem follows the repository's engineering guardrails:
+
+- clients/controllers submit intent rather than authoritative outcomes;
+- command preflight is revision-aware and structurally matches the game-engine envelope (`commandId`, `actorPlayerId`, `expectedRevision`);
+- the game engine must still validate every command before mutation;
+- local pass-and-play receives the active/next player from the authoritative turn state instead of inventing turn order;
+- computer players choose only from legal actions supplied by the authoritative layer;
+- online clients accept newer full authoritative snapshots and ignore stale/duplicate snapshots;
+- reconnect credentials are rotated and remote identities remain bound to stable game-player IDs.
+
+## Unresolved physical-game facts
+
+The available source material does not yet establish several physical-game rules. They remain configuration or explicit unresolved values rather than guessed constants:
 
 - minimum and maximum player count;
-- available pawn identifiers/colors;
-- dog assignment behavior;
-- turn-order behavior;
+- dog-assignment method;
+- turn-order method;
 - private/public card visibility;
 - Finish and victory behavior.
 
-## What is implemented
+Pawn inventory is also configuration-driven so the eventual authoritative component inventory can set the exact supported colors/count.
 
-### Lobby
+## Lobby
 
-- stable player seats;
-- host/session authority separated from gameplay authority;
+`createLobby`, `joinPlayer`, `assignPawn`, `assignDog`, `setPlayerReady`, `startGame`, and `closeLobbyForPlay` provide:
+
+- stable numbered seats;
+- separate host/session authority and gameplay authority;
 - configurable player limits;
-- local, remote-human, and computer controller types;
-- mutually exclusive pawn assignments;
-- dog assignment hook;
-- ready-state validation;
-- minimum-player and all-ready start gate;
-- explicit lobby lifecycle (`open -> starting -> closed`).
+- local-human, remote-human, and computer controller types;
+- mutually exclusive pawn assignment;
+- ready-state and minimum-player start gates;
+- authenticated identity requirements for online humans;
+- one online user identity per player seat;
+- explicit `open -> starting -> closed` lifecycle.
 
-### Local pass-and-play
+Closing the lobby marks participants as waiting. It intentionally does **not** choose the first player.
 
-`LocalPassAndPlaySession` receives the authoritative active/next player from the Rules/Turn engine and emits a privacy-handoff requirement when the eventual rules/content model says private information exists. It never decides turn order itself.
+## Local pass-and-play
 
-### Online private multiplayer
+`LocalPassAndPlaySession` is a presentation/session helper for one-device games. The Rules/Turn engine supplies the initial active player and every next player. The helper only tracks device handoff and whether a privacy gate is required when private information exists.
 
-`OnlineRoomSessionRegistry` provides transport-agnostic connection ownership and reconnection behavior:
+## Online private multiplayer
 
-- authenticated `userId` -> stable game `playerId` binding;
-- connection/disconnection state;
+`OnlineRoomSessionRegistry` is transport-independent. It supports:
+
+- authenticated `userId -> playerId` binding;
+- connected/disconnected session state;
 - reconnect-token validation;
 - reconnect credential rotation;
-- no duplicate player creation during reconnect.
+- preservation of the original game player across reconnects.
 
-`createRoomCode` provides human-friendly room codes without ambiguous characters. A production room service must still enforce uniqueness against the authoritative store.
+`OnlineStateCursor` accepts only newer full authoritative snapshots for the expected game. It permits revision gaps because snapshots are complete state, not event deltas.
 
-### Computer players
+`createRoomCode` produces human-friendly room locators without ambiguous characters. Random selection is injectable for deterministic tests. Room codes are locators, not gameplay randomness or administrative credentials; a production room repository must enforce uniqueness.
 
-`ComputerController` receives only legal actions supplied by the rules engine, then selects the highest-scoring option. This makes AI another player controller rather than a second rules implementation and prevents the AI from bypassing legality.
+Network transport, persistent room storage, authentication-provider integration, and deployment topology remain adapters around this domain package and are not invented here.
 
-### Rules-engine authorization bridge
+## Computer players
 
-`authorizePlayerCommand` checks:
+`ComputerController` is a deterministic baseline controller. It cannot manufacture moves or inspect information outside the legal-action set it receives. It chooses the highest `scoreHint`; ties preserve authoritative legal-action order. More sophisticated AI can replace the scoring policy without becoming a second rules engine.
 
-1. game identity;
-2. active-player ownership;
-3. command legality supplied by the authoritative Rules/Turn engine.
-
-Clients therefore send intent (for example `ROLL_DICE`), never authoritative outcomes such as dice values or final board positions.
-
-## Integration shape
+## Rules-engine integration
 
 ```text
-Local UI / Remote UI / AI
-          |
-     PlayerController
-          |
-    CommandEnvelope
-          |
- authorizePlayerCommand
-          |
- Rules / Turn Engine
-          |
- Authoritative Game State
+Local UI / Remote UI / Computer Controller
+                  |
+           player command intent
+                  |
+        revision-aware preflight
+                  |
+                  v
+        authoritative game engine
+                  |
+             state/events
+                  |
+      presentation / synchronization
 ```
 
-The multiplayer transport and persistence implementation should wrap these domain objects instead of embedding game rules in websocket/UI handlers.
+`preflightPlayerCommand` is defense-in-depth for a session/network boundary. A successful preflight is never permission to mutate state directly; the same command must still be executed by the game engine.
 
-## Build and test
+## Verification
 
-This package has no runtime dependencies.
+The package uses the repository's Node 24 native-TypeScript conventions and root QA workflow. Tests cover lobby invariants, start gating, rules-driven local handoff, stale/wrong-player/illegal command rejection, reconnect identity, duplicate online identities, authoritative snapshot ordering, deterministic computer choice, and room-code random-source validation.
+
+Run from the repository root:
 
 ```bash
-cd packages/game-modes
-npm install
-npm run build
-npm test
+npm run qa
 ```
-
-A root workspace can later absorb this package without changing its public TypeScript API.

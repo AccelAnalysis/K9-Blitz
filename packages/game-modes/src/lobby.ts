@@ -1,11 +1,11 @@
-import { GameModesError } from "./errors.js";
+import { GameModesError } from "./errors.ts";
 import type {
   GameConfiguration,
   JoinPlayerInput,
   LobbyState,
   Player,
   PlayerSeat,
-} from "./types.js";
+} from "./types.ts";
 
 function validateConfiguration(configuration: GameConfiguration): void {
   if (!Number.isInteger(configuration.minimumPlayers) || configuration.minimumPlayers < 1) {
@@ -73,6 +73,7 @@ function validateParticipantForMode(
         "Online private games do not accept local-human controllers.",
       );
     }
+
     if (isHost && participant.controllerType !== "human_remote") {
       throw new GameModesError(
         "INVALID_CONFIGURATION",
@@ -119,15 +120,9 @@ function assertHost(state: LobbyState, actorPlayerId: string): void {
 }
 
 function deriveSetupState(state: LobbyState): LobbyState["setupState"] {
-  if (state.status === "starting") {
-    return "initializing";
-  }
-  if (state.status === "closed") {
-    return "playing";
-  }
-  if (state.players.length < state.configuration.minimumPlayers) {
-    return "waiting_for_players";
-  }
+  if (state.status === "starting") return "initializing";
+  if (state.status === "closed") return "playing";
+  if (state.players.length < state.configuration.minimumPlayers) return "waiting_for_players";
   if (state.players.some((player) => !player.pawnId || !player.dogId)) {
     return "configuring_players";
   }
@@ -156,10 +151,7 @@ export function createLobby(input: {
     seatNumber: 1,
     pawnId: null,
     dogId: null,
-    connectionState:
-      input.host.controllerType === "human_local" || input.host.controllerType === "computer"
-        ? "local"
-        : "connected",
+    connectionState: input.host.controllerType === "human_remote" ? "connected" : "local",
     status: "selecting",
     ready: false,
   };
@@ -185,6 +177,13 @@ export function joinPlayer(state: LobbyState, input: JoinPlayerInput): LobbyStat
 
   if (state.players.some((player) => player.id === input.playerId)) {
     throw new GameModesError("PLAYER_ALREADY_JOINED", `Player ${input.playerId} already joined.`);
+  }
+
+  if (input.userId && state.players.some((player) => player.userId === input.userId)) {
+    throw new GameModesError(
+      "PLAYER_ALREADY_JOINED",
+      `User ${input.userId} already occupies a player seat.`,
+    );
   }
 
   if (state.players.length >= state.configuration.maximumPlayers) {
@@ -281,6 +280,7 @@ export function assignDog(
 ): LobbyState {
   assertLobbyOpen(state);
   const player = findPlayer(state, playerId);
+
   if (!dogId) {
     throw new GameModesError("DOG_REQUIRED", "A dog identifier is required.");
   }
