@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "rulesVersion": "k9-blitz-digital-1.0",
+  "contentVersion": "launch-1.0",
+  "provenance": {
+    "kind": "owner-authorized-digital-adaptation",
+    "physicalEvidenceStatus": "mixed-source-backed-and-owner-authored",
+    "note": "Owner-authored digital behavior is product authority and is not represented as verbatim legacy physical-rule transcription."
+  },
+  "dogs": [
+    { "id": "max", "name": "Max", "breed": "Beagle", "mechanicalModifiers": [] },
+    { "id": "luna", "name": "Luna", "breed": "Corgi", "mechanicalModifiers": [] },
+    { "id": "rookie", "name": "Rookie", "breed": "Training Dog", "mechanicalModifiers": [] },
+    { "id": "ace", "name": "Ace", "breed": "Competition Dog", "mechanicalModifiers": [] }
+  ],
+  "trainerDeck": {
+    "id": "trainer",
+    "ordering": "cyclic-versioned",
+    "cards": [
+      { "id": "good-behavior", "title": "Good Behavior!", "effects": [{ "effectId": "GAIN_PAW_TOKENS", "parameters": { "amount": 2 } }] },
+      { "id": "quick-study", "title": "Quick Study", "effects": [{ "effectId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } }] },
+      { "id": "zoomies", "title": "Zoomies!", "effects": [{ "effectId": "MOVE", "parameters": { "amount": 2, "resolveDestination": false } }] },
+      { "id": "water-break", "title": "Water Break", "effects": [{ "effectId": "NO_EFFECT" }] },
+      { "id": "treat-pouch", "title": "Treat Pouch", "effects": [{ "effectId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } }] },
+      { "id": "practice-pays", "title": "Practice Pays", "effects": [{ "effectId": "ADVANCE_COMPETITION", "parameters": { "amount": 2 } }] },
+      { "id": "distracted", "title": "Squirrel!", "effects": [{ "effectId": "MOVE", "parameters": { "amount": -1, "resolveDestination": false } }] },
+      { "id": "second-chance", "title": "Second Chance", "effects": [{ "effectId": "GRANT_EXTRA_TURN" }] },
+      { "id": "park-pals", "title": "Park Pals", "effects": [{ "effectId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } }, { "effectId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } }] },
+      { "id": "groomed", "title": "Freshly Groomed", "effects": [{ "effectId": "GAIN_PAW_TOKENS", "parameters": { "amount": 2 } }] },
+      { "id": "training-bonus", "title": "Trainer's Bonus", "effects": [{ "effectId": "MOVE", "parameters": { "amount": 1, "resolveDestination": false } }, { "effectId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } }] },
+      { "id": "calm-focus", "title": "Calm & Focused", "effects": [{ "effectId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } }] }
+    ]
+  },
+  "tokens": {
+    "definitions": [{ "id": "paw", "label": "Paw Token" }],
+    "pieceInventory": { "paw": 24, "gameplaySupplyConstraint": false }
+  },
+  "competitionTrack": {
+    "id": "k9-competition-track",
+    "maximumProgress": 8,
+    "victoryRequired": false,
+    "stages": [
+      { "id": "competition-1", "label": "Paw Basics", "prerequisiteStageIds": [] },
+      { "id": "competition-2", "label": "Treat Manners", "prerequisiteStageIds": ["competition-1"] },
+      { "id": "competition-3", "label": "Care Routine", "prerequisiteStageIds": ["competition-2"] },
+      { "id": "competition-4", "label": "Dog Skills", "prerequisiteStageIds": ["competition-3"] },
+      { "id": "competition-5", "label": "Agility", "prerequisiteStageIds": ["competition-4"] },
+      { "id": "competition-6", "label": "Play & Recall", "prerequisiteStageIds": ["competition-5"] },
+      { "id": "competition-7", "label": "Show Ring", "prerequisiteStageIds": ["competition-6"] },
+      { "id": "competition-8", "label": "Champion", "prerequisiteStageIds": ["competition-7"] }
+    ]
+  },
+  "board": {
+    "spaceCount": 72,
+    "startIndex": 0,
+    "finishIndex": 71,
+    "defaultRules": {
+      "normal": "NO_EFFECT",
+      "multipleOfFive": { "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } }
+    },
+    "specialSpaces": [
+      { "spaceId": "space-2", "label": "K9 Academy", "resolverId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } },
+      { "spaceId": "space-4", "label": "Obedience Class", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } },
+      { "spaceId": "space-9", "label": "Trainer Card", "resolverId": "DRAW_TRAINER_CARD" },
+      { "spaceId": "space-14", "label": "Doggy Daycare", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } },
+      { "spaceId": "space-15", "label": "Agility Run", "resolverId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } },
+      { "spaceId": "space-19", "label": "Vet Check", "resolverId": "SPEND_PAW_TOKENS", "parameters": { "amount": 1, "minimum": 0 } },
+      { "spaceId": "space-20", "label": "Obedience Class", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } },
+      { "spaceId": "space-22", "label": "Trainer Card", "resolverId": "DRAW_TRAINER_CARD" },
+      { "spaceId": "space-28", "label": "Pawsitive Park", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 1 } },
+      { "spaceId": "space-32", "label": "Trainer Card", "resolverId": "DRAW_TRAINER_CARD" },
+      { "spaceId": "space-36", "label": "Treat Stop", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 2 } },
+      { "spaceId": "space-42", "label": "Trainer Card", "resolverId": "DRAW_TRAINER_CARD" },
+      { "spaceId": "space-48", "label": "Training Challenge", "resolverId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } },
+      { "spaceId": "space-52", "label": "Treat Stop", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 2 } },
+      { "spaceId": "space-56", "label": "Competition Zone", "resolverId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } },
+      { "spaceId": "space-58", "label": "Vet Check", "resolverId": "SPEND_PAW_TOKENS", "parameters": { "amount": 1, "minimum": 0 } },
+      { "spaceId": "space-62", "label": "Trainer Card", "resolverId": "DRAW_TRAINER_CARD" },
+      { "spaceId": "space-65", "label": "Treat Stop", "resolverId": "GAIN_PAW_TOKENS", "parameters": { "amount": 2 } },
+      { "spaceId": "space-67", "label": "Trick Learned", "resolverId": "ADVANCE_COMPETITION", "parameters": { "amount": 1 } },
+      { "spaceId": "space-71", "label": "Finish", "resolverId": "FINISH_GAME" }
+    ]
+  },
+  "rules": {
+    "movement": { "dice": "2d6", "use": "sum", "doubles": "no-extra-effect", "exactRollToFinish": false },
+    "trainerCardMovementResolvesDestination": false,
+    "hiddenInformation": false,
+    "victory": "first-to-finish"
+  }
+}

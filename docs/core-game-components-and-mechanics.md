@@ -1,67 +1,134 @@
 # 2. Core Game Components & Mechanics
 
-## Scope
+## Status
 
-This slice implements the digital domain primitives for the physical components named in Category 2 of the project README:
+**Complete for K9 Blitz Digital Rules v1.0.**
 
-1. Dice System
-2. Trainer Card System
-3. Dog Profile Cards
-4. Tokens & Token Bag
-5. Board Space Actions
-6. K9 Competition Track
+- Rules authority: `docs/DIGITAL_RULES_V1.md`
+- Runtime component catalog: `packages/core-game/src/baseGame.ts`
+- Content version: `launch-1.0`
+- Rules version: `k9-blitz-digital-1.0`
+- Provenance: owner-authorized digital adaptation where legacy physical behavior was unavailable
 
-The package is intentionally rules-engine-neutral. It provides deterministic operations and state transitions that Category 3 can authorize and compose.
+The physical references establish the visible component families—two dice, Trainer Cards, dog profiles including Max and Luna, tokens/bag, named activity spaces, and the K9 Competition Track. The owner has authorized missing legacy details to be designed for the digital product. Those decisions are versioned as digital rules rather than presented as recovered physical-rule facts.
 
-## Component boundaries
+## 1. Dice System
 
-### Dice
+The launch game uses one red d6 and one white d6. `STANDARD_K9_BLITZ_DICE` defines both. `rollDice()` receives an injected `RandomSource`, records individual values, and returns their total.
 
-`rollDice()` accepts typed die definitions and an injectable `RandomSource`. `STANDARD_K9_BLITZ_DICE` reflects the observed red and white six-sided dice. The roll retains individual values and total; no doubles or movement special case is assumed.
+Digital Rules v1:
 
-### Trainer Cards
+- rolls two d6;
+- movement is the summed total, 2–12;
+- doubles add no special behavior;
+- board movement clamps at Finish; no exact roll is required.
 
-Card **definitions** are separated from physical card **instances**. This permits multiple physical copies of one definition while preserving unique runtime identities. Deck state owns only draw/discard locations; player hands or active cards belong to game state/rules orchestration.
+The animation layer may display rolling dice, but authoritative results come from the game engine/random source rather than the animation.
 
-Card effects are represented as resolver-neutral instructions (`effectId` plus parameters). Category 3 resolves them; Category 2 does not invent effect semantics.
+## 2. Trainer Card System
 
-### Dogs
+The launch Trainer deck contains 12 owner-authorized cards in a fixed authored sequence:
 
-Dog definitions hold content-facing profile information and arbitrary attributes/skills. `DogProgressState` holds runtime training and achievements separately, preventing source card content from being mutated during play.
+1. Good Behavior! — +2 Paw Tokens
+2. Quick Study — +1 Competition step
+3. Zoomies! — move +2; do not resolve destination
+4. Water Break — no state change
+5. Treat Pouch — +1 Paw Token
+6. Practice Pays — +2 Competition steps
+7. Squirrel! — move -1; do not resolve destination
+8. Second Chance — extra turn
+9. Park Pals — +1 Paw Token and +1 Competition step
+10. Freshly Groomed — +2 Paw Tokens
+11. Trainer's Bonus — move +1 and +1 Paw Token; do not resolve destination
+12. Calm & Focused — +1 Competition step
 
-### Tokens
+`createCyclicTrainerDeck()` and `drawCyclicTrainerCard()` model the exact v1 behavior: after card 12, the next draw returns to card 1. Generic shuffled/deck/discard primitives remain available for future rules versions.
 
-The bag tracks unique physical token instances and draws without replacement. Player inventory is tracked by token definition ID and supports validated collection and spending. Returning tokens to the bag is not automated because the rulebook behavior is not yet established.
+Cards resolve immediately and are public; v1 does not maintain hidden hands.
 
-### Board-space actions
+## 3. Dog Profile Cards
 
-Board spaces reference action definitions by `resolverId`. This keeps the graphical board independent from rule execution. Triggers currently support `land`, `pass`, `turn-start`, and `turn-end` as structural hooks; the rules engine decides which hooks are actually used by authoritative K9 Blitz rules.
+The launch catalog contains:
 
-### Competition Track
+- Max — Beagle;
+- Luna — Corgi;
+- Rookie — Training Dog;
+- Ace — Competition Dog.
 
-Competition stages are content-defined with prerequisites, requirements, and reward IDs. The implementation validates references and completion eligibility but does not assume that the photographed icon sequence itself defines final rules.
+Under Digital Rules v1 dog choice is identity/presentation only and does not alter movement, rewards, dice, or victory. The `DogProgressState` API still supports immutable training and achievement progression for current presentation and future content.
 
-## Integration contract with Category 3
+## 4. Tokens & Token Bag
 
-Category 3 should consume these operations through commands/events rather than modifying component state ad hoc. Examples:
+The canonical v1 resource is the **Paw Token**.
 
-- authorize a dice roll, then call `rollDice()`;
-- authorize a Trainer Card draw, then call `drawTrainerCard()`;
-- translate a landed board space into `getTriggeredSpaceActions()` and execute referenced resolver IDs;
-- satisfy configured competition requirements, then call `completeCompetitionStage()`;
-- persist resulting component state inside the authoritative game state.
+Core mechanics provide:
 
-## Unknown-rule policy
+- token definitions separate from unique piece instances;
+- deterministic shuffled bag construction;
+- drawing without replacement;
+- player inventory collection;
+- validated spending;
+- prevention of negative inventory.
 
-Until the physical rulebook and complete component inventory are transcribed, authoritative gameplay content must not be inferred from the board photograph. In particular, this slice does not claim:
+The digital component inventory contains 24 Paw Token piece instances for bag/piece representation and testability. Digital Rules v1 tracks awarded Paw Tokens as counts; finite physical-piece supply does not limit an award.
 
-- special behavior for doubles or individual die values;
-- the exact movement formula;
-- any specific Trainer Card effect;
-- meanings or values for photographed token icons;
-- actual Dog Card attributes or special abilities;
-- the consequence of Vet Check, Obedience Class, Agility Course, Treat Stop, or other spaces;
-- the true K9 Competition Track requirements/rewards;
-- exact finish/winner conditions.
+## 5. Board Space Actions
 
-The software seams are present so those rules can be loaded later without rewriting the component model.
+`DIGITAL_BASE_BOARD_SPACES` defines mechanics for all 72 route positions so no launch-space behavior is left implicit in artwork.
+
+The 20 named special positions include K9 Academy, Obedience Class, Trainer Card, Doggy Daycare, Agility Run, Vet Check, Pawsitive Park, Treat Stop, Training Challenge, Competition Zone, Trick Learned, and Finish. Other multiples of five use the launch Paw Bonus rule (+1 Paw Token); remaining spaces have no state-changing landing action.
+
+Important resolver contracts include:
+
+- `GAIN_PAW_TOKENS`;
+- `SPEND_PAW_TOKENS`;
+- `ADVANCE_COMPETITION`;
+- `DRAW_TRAINER_CARD`;
+- `FINISH_GAME`.
+
+A landing space resolves exactly once. Trainer Card movement explicitly does not recursively resolve its destination.
+
+## 6. K9 Competition Track
+
+The launch track has eight sequential stages:
+
+1. Paw Basics
+2. Treat Manners
+3. Care Routine
+4. Dog Skills
+5. Agility
+6. Play & Recall
+7. Show Ring
+8. Champion
+
+The generic competition API validates stage references and prerequisites. Completion of stage eight awards `achievement:k9-competition-complete` in component state. Digital Rules v1 caps progress at eight but does not require competition completion to win.
+
+## 7. Component/Rules Boundary
+
+Category 2 owns definitions and deterministic component operations. Category 3 remains the authority for legal commands, turn phases, game-state mutation, history/events, persistence, concurrency/revision checks, and victory declaration.
+
+The intended flow is:
+
+```text
+player command
+  -> Category 3 validates authority/phase/revision
+  -> Category 2 component operation resolves
+  -> Category 3 commits authoritative state + events
+  -> UI/animation renders accepted result
+```
+
+This keeps component mechanics reusable in local play, computer play, online authoritative hosting, tests, and future presentation layers.
+
+## 8. Quality Gate
+
+Category 2 is included in repository QA. The repository-wide test discovery finds `packages/core-game/test/core-game.test.mjs`, detects its `/dist/` import, builds `packages/core-game`, and then executes the deterministic component suite as part of `npm test`.
+
+The tests cover:
+
+- deterministic two-die results and v1 doubles semantics;
+- cyclic Trainer Card ordering/wraparound;
+- idempotent dog training/achievement progress;
+- token bag draws and inventory spending;
+- complete 72-space mechanics overlay and named resolver mappings;
+- sequential Competition prerequisites;
+- catalog counts, rules/content version, and owner-authorized provenance.
