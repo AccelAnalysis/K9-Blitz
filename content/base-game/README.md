@@ -1,7 +1,14 @@
-# Base Game Content
+# K9 Blitz Base Game Content
 
-This directory is intentionally not populated with guessed gameplay data.
+This directory is the release-facing entry point for the owner-authorized **K9 Blitz Digital Rules v1.0** content baseline.
 
-Current repository inputs establish K9 Blitz content categories and some visible names/locations, but they do not provide the complete authoritative rulebook, Trainer Cards, Dog Cards, token definitions, Competition Track rules, or production artwork.
+- Rules authority: `../../docs/DIGITAL_RULES_V1.md`
+- Rules ID: `k9-blitz-digital-1.0`
+- Content ID: `launch-1.0`
+- Typed published catalog: `../../packages/game-content-admin/src/baseGame.ts`
+- GitHub Pages publication snapshot: `../../apps/web/game-data.js`
+- Browser administration surface: `../../apps/web/admin.html`
 
-Use `@k9-blitz/game-content-admin` to capture source material as **draft** records. Set `verificationStatus: "source-verified"` only after the corresponding physical source has been inspected. Publish a base-game content pack only after its exact entity revisions pass referential and rule-capability validation.
+The game owner explicitly authorized unavailable design details to be created for the digital edition. Those choices are versioned product authority; they are **not** represented as recovered facts from an unseen legacy rulebook.
+
+The published baseline includes the four launch dog profiles, the 12-card Trainer deck, Paw Token rules, all 72 digital route spaces, reusable challenge/reward/penalty definitions, the eight-step Competition Track, help content, settings, media metadata, and asset inventory. CI verifies that the typed catalog and the GitHub Pages runtime catalog remain synchronized.
