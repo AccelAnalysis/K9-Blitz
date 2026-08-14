@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   ComputerController,
   GameModesError,
+  K9_BLITZ_DIGITAL_RULES_V1_PLAYER_PROFILE,
   LocalPassAndPlaySession,
   OnlineRoomSessionRegistry,
   OnlineStateCursor,
@@ -11,8 +12,11 @@ import {
   assignPawn,
   canStartGame,
   closeLobbyForPlay,
+  createK9BlitzGameConfiguration,
   createLobby,
   createRoomCode,
+  getStartingPlayerId,
+  isLaunchSupportedMode,
   joinPlayer,
   preflightPlayerCommand,
   setPlayerReady,
@@ -20,16 +24,9 @@ import {
 } from "./index.ts";
 import type { GameConfiguration, LobbyState, RevisionAwarePlayerCommand } from "./types.ts";
 
-const localConfiguration: GameConfiguration = {
-  mode: "local_pass_and_play",
-  minimumPlayers: 2,
-  maximumPlayers: 3,
-  dogAssignmentMode: "unresolved",
-  allowReconnect: false,
-  rulesVersion: "unassigned",
-  contentVersion: "unassigned",
-  pawnIds: ["red", "blue", "green"],
-};
+const localConfiguration: GameConfiguration = createK9BlitzGameConfiguration(
+  "local_pass_and_play",
+);
 
 function configuredLocalLobby(): LobbyState {
   let lobby = createLobby({
@@ -49,9 +46,9 @@ function configuredLocalLobby(): LobbyState {
   });
 
   lobby = assignPawn(lobby, "p1", "red");
-  lobby = assignDog(lobby, "p1", "dog-a");
+  lobby = assignDog(lobby, "p1", "max");
   lobby = assignPawn(lobby, "p2", "blue");
-  lobby = assignDog(lobby, "p2", "dog-b");
+  lobby = assignDog(lobby, "p2", "luna");
   return lobby;
 }
 
@@ -63,11 +60,7 @@ function readyLocalLobby(): LobbyState {
 }
 
 function onlineLobby(): LobbyState {
-  const configuration: GameConfiguration = {
-    ...localConfiguration,
-    mode: "online_private",
-    allowReconnect: true,
-  };
+  const configuration = createK9BlitzGameConfiguration("online_private");
 
   let lobby = createLobby({
     gameId: "game-online",
@@ -100,15 +93,69 @@ function command(overrides: Partial<RevisionAwarePlayerCommand> = {}): RevisionA
   };
 }
 
-test("lobby assigns stable seats and rejects duplicate pawns", () => {
-  let lobby = readyLocalLobby();
-  assert.equal(lobby.players[0]?.seatNumber, 1);
-  assert.equal(lobby.players[1]?.seatNumber, 2);
-  assert.equal(canStartGame(lobby), true);
+test("Digital Rules v1 player profile matches committed product authority", () => {
+  const profile = K9_BLITZ_DIGITAL_RULES_V1_PLAYER_PROFILE;
+  assert.equal(profile.id, "k9-blitz-digital-1.0");
+  assert.equal(profile.contentId, "launch-1.0");
+  assert.equal(profile.provenance, "owner_authorized_digital");
+  assert.equal(profile.minimumPlayers, 2);
+  assert.equal(profile.maximumPlayers, 4);
+  assert.deepEqual(profile.pawnIds, ["red", "blue", "green", "yellow"]);
+  assert.equal(profile.dogAssignmentMode, "player_choice");
+  assert.equal(profile.uniqueDogAssignments, false);
+  assert.equal(profile.turnOrderMode, "seat_order");
+  assert.equal(profile.startingSeatNumber, 1);
+  assert.equal(profile.trainerCardVisibility, "public");
+  assert.equal(profile.victoryMode, "first_to_finish");
+  assert.equal(isLaunchSupportedMode("local_pass_and_play"), true);
+  assert.equal(isLaunchSupportedMode("online_private"), false);
+  assert.equal(isLaunchSupportedMode("solo_vs_ai"), false);
+});
 
+test("canonical configuration cannot silently drift from Digital Rules v1", () => {
+  assert.throws(
+    () => createLobby({
+      gameId: "drifted",
+      host: {
+        playerId: "p1",
+        displayName: "Player One",
+        controllerType: "human_local",
+      },
+      configuration: {
+        ...localConfiguration,
+        maximumPlayers: 5,
+        pawnIds: ["red", "blue", "green", "yellow", "brown"],
+      },
+    }),
+    (error) => error instanceof GameModesError && error.code === "INVALID_CONFIGURATION",
+  );
+});
+
+test("canonical local lobby supports four setup-order seats and Player 1 starts", () => {
+  let lobby = createLobby({
+    gameId: "four-player",
+    host: { playerId: "p1", displayName: "One", controllerType: "human_local" },
+    configuration: localConfiguration,
+  });
+
+  for (let index = 2; index <= 4; index += 1) {
+    lobby = joinPlayer(lobby, {
+      playerId: `p${index}`,
+      displayName: `Player ${index}`,
+      controllerType: index % 2 === 0 ? "computer" : "human_local",
+    });
+  }
+
+  assert.equal(lobby.players.length, 4);
+  assert.deepEqual(lobby.seats.map((seat) => seat.playerId), ["p1", "p2", "p3", "p4"]);
+  assert.equal(getStartingPlayerId(lobby.players), "p1");
+});
+
+test("Digital Rules v1 requires unique pawns but permits repeated dog profiles", () => {
+  let lobby = configuredLocalLobby();
   lobby = joinPlayer(lobby, {
     playerId: "p3",
-    displayName: "Computer",
+    displayName: "Player Three",
     controllerType: "computer",
   });
 
@@ -116,9 +163,46 @@ test("lobby assigns stable seats and rejects duplicate pawns", () => {
     () => assignPawn(lobby, "p3", "red"),
     (error) => error instanceof GameModesError && error.code === "PAWN_UNAVAILABLE",
   );
+
+  lobby = assignPawn(lobby, "p3", "green");
+  lobby = assignDog(lobby, "p3", "max");
+  assert.equal(lobby.players.find((player) => player.id === "p3")?.dogId, "max");
 });
 
-test("lobby start enforces minimum players and readiness without choosing turn order", () => {
+test("solo vs AI mode contract permits one local human host plus computer seats", () => {
+  const configuration = createK9BlitzGameConfiguration("solo_vs_ai");
+  let lobby = createLobby({
+    gameId: "solo",
+    host: { playerId: "human", displayName: "Human", controllerType: "human_local" },
+    configuration,
+  });
+
+  assert.throws(
+    () => joinPlayer(lobby, {
+      playerId: "human-2",
+      displayName: "Second Human",
+      controllerType: "human_local",
+    }),
+    (error) => error instanceof GameModesError && error.code === "INVALID_CONFIGURATION",
+  );
+
+  lobby = joinPlayer(lobby, {
+    playerId: "cpu-1",
+    displayName: "CPU One",
+    controllerType: "computer",
+  });
+  lobby = assignPawn(lobby, "human", "red");
+  lobby = assignDog(lobby, "human", "max");
+  lobby = assignPawn(lobby, "cpu-1", "blue");
+  lobby = assignDog(lobby, "cpu-1", "luna");
+  lobby = setPlayerReady(lobby, "human", true);
+  lobby = setPlayerReady(lobby, "cpu-1", true);
+
+  assert.equal(canStartGame(lobby), true);
+  assert.equal(startGame(lobby, "human").status, "starting");
+});
+
+test("lobby start enforces minimum players and readiness", () => {
   let singlePlayer = createLobby({
     gameId: "single",
     host: {
@@ -129,7 +213,7 @@ test("lobby start enforces minimum players and readiness without choosing turn o
     configuration: localConfiguration,
   });
   singlePlayer = assignPawn(singlePlayer, "p1", "red");
-  singlePlayer = assignDog(singlePlayer, "p1", "dog-a");
+  singlePlayer = assignDog(singlePlayer, "p1", "max");
   singlePlayer = setPlayerReady(singlePlayer, "p1", true);
 
   assert.throws(
@@ -150,15 +234,16 @@ test("lobby start enforces minimum players and readiness without choosing turn o
   assert.equal(playing.players.every((player) => player.status === "waiting"), true);
 });
 
-test("pass-and-play follows the authoritative next player and can require a privacy gate", () => {
+test("pass-and-play follows authoritative turn state and v1 public cards require no privacy gate", () => {
   const playing = closeLobbyForPlay(startGame(readyLocalLobby(), "p1"));
-  const session = new LocalPassAndPlaySession(playing, "p2", true);
-  assert.equal(session.activePlayer.id, "p2");
+  const privateInformationExists = localConfiguration.trainerCardVisibility === "owner_only";
+  const session = new LocalPassAndPlaySession(playing, "p1", privateInformationExists);
+  assert.equal(session.activePlayer.id, "p1");
 
-  assert.deepEqual(session.handoffTo("p1"), {
-    previousPlayerId: "p2",
-    nextPlayerId: "p1",
-    requiresPrivacyGate: true,
+  assert.deepEqual(session.handoffTo("p2"), {
+    previousPlayerId: "p1",
+    nextPlayerId: "p2",
+    requiresPrivacyGate: false,
   });
 });
 
@@ -222,11 +307,7 @@ test("online reconnect preserves game-player identity and rotates reconnect cred
 });
 
 test("online lobby requires authenticated remote identities and prevents one user from occupying two seats", () => {
-  const configuration: GameConfiguration = {
-    ...localConfiguration,
-    mode: "online_private",
-    allowReconnect: true,
-  };
+  const configuration = createK9BlitzGameConfiguration("online_private");
 
   assert.throws(
     () => createLobby({
