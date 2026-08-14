@@ -79,14 +79,15 @@ test("host can start only after configured minimum and ready checks succeed", ()
   const playing = closeLobbyForPlay(starting);
   assert.equal(playing.setupState, "playing");
   assert.equal(playing.status, "closed");
+  assert.equal(playing.players.every((player) => player.status === "waiting"), true);
 });
 
-test("pass-and-play rotates by seat and requests privacy handoff when configured", () => {
+test("pass-and-play follows the authoritative next player and requests privacy handoff", () => {
   const playing = closeLobbyForPlay(startGame(readyLocalLobby(), "p1"));
-  const session = new LocalPassAndPlaySession(playing, true);
+  const session = new LocalPassAndPlaySession(playing, "p1", true);
   assert.equal(session.activePlayer.id, "p1");
 
-  const handoff = session.advanceTurn();
+  const handoff = session.handoffTo("p2");
   assert.deepEqual(handoff, {
     previousPlayerId: "p1",
     nextPlayerId: "p2",
