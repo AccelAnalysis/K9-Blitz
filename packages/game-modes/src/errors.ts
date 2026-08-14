@@ -20,11 +20,11 @@ export type GameModesErrorCode =
   | "NO_LEGAL_ACTIONS";
 
 export class GameModesError extends Error {
-  constructor(
-    public readonly code: GameModesErrorCode,
-    message: string,
-  ) {
+  public readonly code: GameModesErrorCode;
+
+  constructor(code: GameModesErrorCode, message: string) {
     super(message);
+    this.code = code;
     this.name = "GameModesError";
   }
 }
