@@ -1,0 +1,12 @@
+export { GameExperience } from "./GameExperience.js";
+export { BoardViewport } from "./components/BoardViewport.js";
+export { EventModal } from "./components/EventModal.js";
+export { PlayerDashboard } from "./components/PlayerDashboard.js";
+export { TurnControls } from "./components/TurnControls.js";
+export { boardViewFromDefinition } from "./adapters/boardMap.js";
+export { GameAudioController } from "./lib/audio.js";
+export { PresentationQueue } from "./lib/presentationQueue.js";
+export * from "./model.js";
+export type { BoardDefinitionLike } from "./adapters/boardMap.js";
+export type { AudioSettings } from "./lib/audio.js";
+export type { PresentationStep } from "./lib/presentationQueue.js";
