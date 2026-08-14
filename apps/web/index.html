@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1688c9" />
+  <meta name="description" content="K9 Blitz — The Ultimate Dog Training Challenge, digital tabletop edition." />
+  <title>K9 Blitz — Digital Game</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="K9 Blitz">
+        <span class="brand-mark">K9</span>
+        <span class="brand-word">BLITZ</span>
+        <span class="brand-subtitle">Digital Tabletop</span>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button" id="helpButton" type="button" aria-label="How to play">?</button>
+        <button class="icon-button" id="soundButton" type="button" aria-label="Toggle sound" aria-pressed="true">🔊</button>
+        <button class="icon-button" id="fullscreenButton" type="button" aria-label="Toggle fullscreen">⛶</button>
+        <button class="secondary-button compact" id="newGameButton" type="button">New Game</button>
+      </div>
+    </header>
+
+    <div class="rules-banner" role="note">
+      <strong>Launch edition:</strong> local/pass-and-play is fully playable using Digital Demo Rules. The physical rulebook and production component inventory are still required for exact rule fidelity.
+    </div>
+
+    <main class="game-layout">
+      <section class="board-card" aria-label="K9 Blitz game board">
+        <div class="board-toolbar">
+          <div>
+            <span class="eyebrow">Barkley Ville</span>
+            <strong id="boardStatus">Ready for a new game</strong>
+          </div>
+          <div class="zoom-controls" aria-label="Board zoom controls">
+            <button type="button" id="zoomOutButton" aria-label="Zoom out">−</button>
+            <span id="zoomLabel">100%</span>
+            <button type="button" id="zoomInButton" aria-label="Zoom in">+</button>
+            <button type="button" id="focusButton" aria-label="Focus active player">◎</button>
+          </div>
+        </div>
+        <div class="board-viewport" id="boardViewport" tabindex="0" aria-label="Scrollable K9 Blitz board">
+          <div class="board-stage" id="boardStage">
+            <img src="./assets/board.svg" alt="K9 Blitz Barkley Ville game board" draggable="false" />
+            <div class="space-layer" id="spaceLayer" aria-hidden="true"></div>
+            <div class="pawn-layer" id="pawnLayer" aria-live="polite"></div>
+            <div class="finish-glow" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="Game controls">
+        <section class="turn-card" id="turnCard">
+          <div class="turn-heading">
+            <div>
+              <span class="eyebrow">Current turn</span>
+              <h1 id="activePlayerName">K9 Blitz</h1>
+            </div>
+            <span class="round-pill" id="roundLabel">Round —</span>
+          </div>
+          <div class="dog-summary">
+            <div class="dog-avatar" id="activeDogIcon" aria-hidden="true">🐾</div>
+            <div>
+              <strong id="activeDogName">Set up players to begin</strong>
+              <span id="activeDogBreed">The Ultimate Dog Training Challenge</span>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat"><span>Position</span><strong id="positionStat">Start</strong></div>
+            <div class="stat"><span>Paw Tokens</span><strong id="tokenStat">0</strong></div>
+            <div class="stat"><span>Cards</span><strong id="cardStat">0</strong></div>
+          </div>
+        </section>
+
+        <section class="dice-card">
+          <div class="dice-row" aria-label="Dice result">
+            <div class="die" id="dieOne">–</div>
+            <div class="plus">+</div>
+            <div class="die" id="dieTwo">–</div>
+            <div class="dice-total"><span>Total</span><strong id="diceTotal">—</strong></div>
+          </div>
+          <button class="roll-button" id="rollButton" type="button" disabled>
+            <span>🎲</span> Roll Dice
+          </button>
+          <p class="turn-instruction" id="turnInstruction">Create a local game to start training.</p>
+        </section>
+
+        <section class="competition-card">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Progress</span>
+              <h2>K9 Competition Track</h2>
+            </div>
+            <strong id="competitionCount">0/8</strong>
+          </div>
+          <div class="competition-track" id="competitionTrack" aria-label="Competition progress"></div>
+        </section>
+
+        <section class="players-card">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">At the table</span>
+              <h2>Players</h2>
+            </div>
+          </div>
+          <div class="player-list" id="playerList">
+            <div class="empty-state">No game in progress.</div>
+          </div>
+        </section>
+
+        <details class="history-card" open>
+          <summary>Game History <span id="historyCount">0</span></summary>
+          <ol class="history-list" id="historyList">
+            <li>Game history will appear here.</li>
+          </ol>
+        </details>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="setupModal" hidden>
+    <section class="modal setup-modal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+      <div class="modal-hero">
+        <span class="paw-badge">🐾</span>
+        <span class="eyebrow">Welcome to Barkley Ville</span>
+        <h2 id="setupTitle">Start K9 Blitz</h2>
+        <p>Set up 2–4 trainers for local pass-and-play. You can also make any seat a computer player.</p>
+      </div>
+
+      <div class="resume-card" id="resumeCard" hidden>
+        <div>
+          <strong>Saved game found</strong>
+          <span id="resumeSummary">Continue where you left off.</span>
+        </div>
+        <button class="secondary-button" id="resumeButton" type="button">Resume</button>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode-card selected" type="button" aria-pressed="true">
+          <span>👥</span><strong>Local Game</strong><small>Pass-and-play on this device</small>
+        </button>
+        <button class="mode-card" type="button" disabled title="Online rooms require a server-backed authoritative host.">
+          <span>🌐</span><strong>Online Room</strong><small>Server-backed mode coming next</small>
+        </button>
+      </div>
+
+      <div class="setup-row">
+        <label for="playerCount">Players</label>
+        <select id="playerCount">
+          <option value="2">2 players</option>
+          <option value="3">3 players</option>
+          <option value="4">4 players</option>
+        </select>
+      </div>
+      <div class="player-setup-list" id="playerSetupList"></div>
+
+      <div class="rules-disclosure">
+        <strong>Digital Demo Rules v0.1</strong>
+        <span>Roll two dice, move along the scenic Barkley Ville route, resolve training spaces/cards, collect Paw Tokens, progress on the Competition Track, and be first to Finish.</span>
+      </div>
+
+      <button class="primary-button" id="startGameButton" type="button">Start Game</button>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="eventModal" hidden>
+    <section class="modal event-modal" role="dialog" aria-modal="true" aria-labelledby="eventTitle">
+      <div class="event-icon" id="eventIcon">🐾</div>
+      <span class="eyebrow" id="eventKicker">Barkley Ville</span>
+      <h2 id="eventTitle">Event</h2>
+      <p id="eventText"></p>
+      <div class="event-effect" id="eventEffect" hidden></div>
+      <button class="primary-button" id="eventContinueButton" type="button">Continue</button>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="helpModal" hidden>
+    <section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="modal-close" id="helpCloseButton" type="button" aria-label="Close help">×</button>
+      <span class="eyebrow">Digital Demo Rules</span>
+      <h2 id="helpTitle">How to Play</h2>
+      <div class="help-grid">
+        <article><span>🎲</span><h3>1. Roll</h3><p>On your turn, roll two dice. Your pawn hops one space at a time through Barkley Ville.</p></article>
+        <article><span>🐾</span><h3>2. Train</h3><p>Special spaces can award Paw Tokens, advance your Competition Track, trigger a Vet Check, or draw a Trainer Card.</p></article>
+        <article><span>🏆</span><h3>3. Finish</h3><p>The first trainer to reach the Finish podium wins this digital demo ruleset.</p></article>
+      </div>
+      <div class="source-note">
+        <strong>Rule-fidelity note</strong>
+        <p>The board photograph establishes the visual board, dice, pawns, Trainer Cards, dog profiles, tokens, named action spaces, and K9 Competition Track. Exact physical-game card effects, movement rules, token meanings, competition requirements, and victory conditions are not yet present in the repository. This launch keeps those assumptions isolated in a clearly versioned demo ruleset so authoritative rules can replace them without redesigning the UI.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
