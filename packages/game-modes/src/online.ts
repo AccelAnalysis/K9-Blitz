@@ -23,17 +23,18 @@ function playerForUser(lobby: LobbyState, userId: string): Player {
 
 export class OnlineRoomSessionRegistry {
   readonly #sessions = new Map<string, OnlinePlayerSession>();
+  private readonly lobby: LobbyState;
+  private readonly tokenSource: TokenSource;
 
-  constructor(
-    private readonly lobby: LobbyState,
-    private readonly tokenSource: TokenSource = secureTokenSource,
-  ) {
+  constructor(lobby: LobbyState, tokenSource: TokenSource = secureTokenSource) {
     if (lobby.configuration.mode !== "online_private") {
       throw new GameModesError(
         "INVALID_CONFIGURATION",
         "OnlineRoomSessionRegistry requires online_private mode.",
       );
     }
+    this.lobby = lobby;
+    this.tokenSource = tokenSource;
   }
 
   connect(userId: string, connectionId: string): OnlinePlayerSession {
