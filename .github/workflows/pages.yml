@@ -50,10 +50,29 @@ jobs:
           cp apps/web/assets/favicon.svg _site/assets/favicon.svg
           cp packages/board-map/assets/board-reference.svg _site/assets/board.svg
           touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Check Pages repository activation
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Pages activation required
+        if: steps.pages.outputs.enabled != 'true'
+        run: |
+          echo "::notice title=GitHub Pages activation required::Open repository Settings → Pages and set Build and deployment Source to GitHub Actions. Then rerun this workflow. The verified artifact is already ready to publish."
+      - name: Configure GitHub Pages
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - name: Deploy to GitHub Pages
+        if: steps.pages.outputs.enabled == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
