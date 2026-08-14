@@ -1,13 +1,11 @@
-# Board asset provenance and replacement notes
+# Board asset provenance and release status
 
-`board-reference.svg` is a development schematic derived from the user-provided K9 Blitz tabletop photograph supplied to this project on 2026-08-13.
+`board-production.svg` is the **release-authoritative digital board artwork**. It was recreated from the K9 Blitz project-source image supplied by the owner. The owner has confirmed full rights/ownership and explicitly authorized derivative/reconstructed production assets plus authored completion where source-image geometry is unclear.
 
-It is committed as a **development/calibration reference**, not as final production artwork and not as a claim of pixel-identical reconstruction.
+The artwork is paired with `K9_BLITZ_PRODUCTION_BOARD`, which supplies the 72-space machine-readable Digital Rules v1 route and hit geometry.
 
-Before release-quality visual acceptance, replace it with one of the following, in preferred order:
+Production pawns are `pawns/pawn-red.svg`, `pawn-blue.svg`, `pawn-green.svg`, `pawn-yellow.svg`, and `pawn-brown.svg`, corresponding to the physical colors visible in the project source.
 
-1. original licensed production board artwork;
-2. a straight-down, high-resolution scan/photograph of the board;
-3. a professionally recreated digital board asset approved against the physical product.
+`board-reference.svg` is retained only as the original development/calibration schematic and is not selected by production clients.
 
-Do not treat the current SVG as authoritative evidence for rules, printed space order, card behavior, or token behavior.
+Provenance vocabulary: `verified` = source-backed; `authored` = explicit owner-authorized release completion; `provisional` = non-release experiment.

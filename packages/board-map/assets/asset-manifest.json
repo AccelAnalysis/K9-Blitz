@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "board": {
+    "id": "barkley-ville-production",
+    "path": "board-production.svg",
+    "nativeWidth": 1600,
+    "nativeHeight": 900,
+    "status": "production",
+    "source": "Owner-provided K9 Blitz project source image",
+    "rights": "Owner-authorized derivative recreation",
+    "geometry": "K9 Blitz Digital Rules v1.0 / 72 spaces"
+  },
+  "pawns": [
+    { "id": "red", "path": "pawns/pawn-red.svg" },
+    { "id": "blue", "path": "pawns/pawn-blue.svg" },
+    { "id": "green", "path": "pawns/pawn-green.svg" },
+    { "id": "yellow", "path": "pawns/pawn-yellow.svg" },
+    { "id": "brown", "path": "pawns/pawn-brown.svg" }
+  ]
+}
