@@ -40,11 +40,25 @@ The GitHub Pages release supports:
 - responsive board zoom/focus;
 - sound controls, fullscreen, reduced-motion support, and win celebration.
 
-## Rules fidelity
+## Rules authority
 
-The current physical references establish the visual board, dice, pawns, Trainer Cards, dog profiles, tokens, visible action-space names, and K9 Competition Track. They do not establish the complete physical ruleset.
+The playable Pages edition uses **K9 Blitz Digital Rules v1.0**, documented in `docs/DIGITAL_RULES_V1.md`.
 
-The playable Pages edition therefore declares its temporary semantics as **Digital Demo Rules v0.1**. Assumptions live only in `apps/web/game-data.js` and `apps/web/game-engine.js`; they are not represented as verified physical-game rules. The authoritative `packages/game-engine` framework remains ready for a source-backed physical rules runtime when the complete rulebook and component inventory are available.
+The physical references establish K9 Blitz's visual identity and many visible game concepts. Where legacy source material did not establish exact behavior, the owner has authorized the missing behavior to be designed for the digital product. Those decisions are now explicit, versioned product rules rather than temporary demo assumptions.
+
+Key launch rules include:
+
+- 2–4 trainers play in setup order;
+- roll two dice and move the summed total;
+- no exact roll is required to reach Finish;
+- landing spaces resolve exactly once;
+- Paw Tokens are the reward/spend resource;
+- the K9 Competition Track caps at 8;
+- Trainer Cards resolve immediately;
+- card-driven movement does not trigger a second landing-space resolution;
+- the first trainer to reach Finish wins immediately.
+
+The launch implementation records `rulesVersion = k9-blitz-digital-1.0` and `contentVersion = launch-1.0`. Saved games from incompatible earlier versions are intentionally not resumed under changed semantics.
 
 ## Online multiplayer
 
@@ -77,6 +91,6 @@ node --test apps/web/test/*.test.mjs
 npm run qa
 ```
 
-## Production-art handoff
+## Board-art handoff
 
-Replace `packages/board-map/assets/board-reference.svg` with approved licensed production artwork (or change the Pages assembly step to copy the approved asset). Keep the same `assets/board.svg` publication contract or update the single reference in `apps/web/index.html`.
+Board artwork remains replaceable independently of game rules. Replace the currently published Board/Map asset when an approved production artwork revision is selected, while preserving `assets/board.svg` or updating its single publication/reference contract. Rule effects must continue to come from versioned game data rather than being inferred from artwork.

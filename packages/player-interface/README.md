@@ -24,7 +24,13 @@ This package implements workstream **4 — Player Interface & Game Experience** 
 - reduced-motion support and responsive desktop/tablet/mobile layout;
 - revision-aware presentation queue that drops stale animation work after reconnect;
 - Node-native unit tests for camera helpers, board adaptation, and presentation queue;
-- demo adapter explicitly labeled as non-authoritative.
+- standalone UI showcase adapter for exercising the presentation package.
+
+## Digital rules authority
+
+K9 Blitz Digital Rules v1.0 are defined in `docs/DIGITAL_RULES_V1.md`. Missing legacy-game details are no longer presentation blockers: owner-authorized digital behavior is explicitly specified, versioned, and may be rendered by the interface once supplied by authoritative state/application orchestration.
+
+The presentation package still does **not** decide gameplay correctness. The rule authority change means the product now has defined behavior to consume; it does not move rule execution into React.
 
 ## Integration contract
 
@@ -42,9 +48,20 @@ This package implements workstream **4 — Player Interface & Game Experience** 
 
 The Board/Map layer provides normalized logical-space anchors and may provide production artwork. `boardViewFromDefinition` accepts the structural subset already exposed by `@k9-blitz/board-map`.
 
-## Source-data boundary
+## Player-experience rules represented by v1.0
 
-The available photograph/description establishes visible concepts but not exact gameplay behavior. The demo path exists only to exercise presentation states and remains provisional. This package does not define authentic setup, movement, card effects, token effects, Competition Track rules, penalties/rewards, hidden-information rules, or win conditions.
+The player-facing experience may state the following without provisional/fidelity warnings:
+
+- 2–4 trainers play in setup order;
+- each turn rolls two six-sided dice and moves the total;
+- an exact roll is not required to reach Finish;
+- landing effects resolve once;
+- Trainer Card movement does not recursively resolve the destination space;
+- Paw Tokens are collected and can be spent by Vet Check;
+- K9 Competition progress caps at 8;
+- Trainer Cards resolve immediately rather than remaining hidden in a hand;
+- the first trainer to reach Finish wins immediately;
+- dog profiles are identity/presentation choices in v1.0 and have no hidden mechanical ability.
 
 ## Run this package standalone
 
@@ -60,6 +77,6 @@ npm run dev
 npm run qa
 ```
 
-## Production asset handoff
+## Board-art handoff
 
-The fallback demo board is deliberately not production artwork. Provide the finalized Board/Map artwork via `BoardView.artworkUrl` and authoritative coordinates through the board adapter. Presentation must never infer rules from printed colors, labels, or image geometry.
+Provide the approved Board/Map artwork via `BoardView.artworkUrl` and board coordinates through the board adapter. Presentation must use the versioned rules/content model for behavior rather than inferring effects from printed colors, labels, or image geometry.
