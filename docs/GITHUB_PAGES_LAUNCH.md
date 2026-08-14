@@ -29,8 +29,8 @@ The GitHub Pages release supports:
 - 2–4 local pass-and-play trainers;
 - optional computer-controlled seats;
 - two-die rolling and animated pawn movement;
-- Barkley Ville board interactions;
-- Trainer Cards;
+- the owner-authorized 72-space Barkley Ville logical route;
+- Trainer Cards with random no-repeat draws and discard recycling;
 - Paw Token collection/spending;
 - K9 Competition Track progress;
 - dog profiles;
@@ -40,11 +40,19 @@ The GitHub Pages release supports:
 - responsive board zoom/focus;
 - sound controls, fullscreen, reduced-motion support, and win celebration.
 
-## Rules fidelity
+## Rules authority
 
-The current physical references establish the visual board, dice, pawns, Trainer Cards, dog profiles, tokens, visible action-space names, and K9 Competition Track. They do not establish the complete physical ruleset.
+The playable release uses **K9 Blitz Digital Rules v1.0**:
 
-The playable Pages edition therefore declares its temporary semantics as **Digital Demo Rules v0.1**. Assumptions live only in `apps/web/game-data.js` and `apps/web/game-engine.js`; they are not represented as verified physical-game rules. The authoritative `packages/game-engine` framework remains ready for a source-backed physical rules runtime when the complete rulebook and component inventory are available.
+- ruleset ID: `k9-blitz-digital`;
+- rules version: `1.0.0`;
+- content version: `digital-base-1.0.0`.
+
+The project references establish the physical game's theme and visible components, while the game owner has explicitly authorized original design completion wherever exact physical rule behavior is unavailable. The resulting digital decisions are therefore production-authoritative for the digital edition rather than temporary demo assumptions.
+
+The canonical rules are documented in `docs/K9_BLITZ_DIGITAL_RULES_V1.md` and executed by `packages/game-engine/src/digitalRulesV1.ts` through the shared authoritative rules engine. Source-observed physical facts and owner-authorized digital design choices remain distinguishable in project provenance.
+
+A missing physical rulebook is **not a blocker** to playing or shipping Digital Rules v1.0. If a later physical-rule transcription is supplied and the owner wants different behavior, it must ship as a new version rather than silently changing existing saved games.
 
 ## Online multiplayer
 
@@ -79,4 +87,4 @@ npm run qa
 
 ## Production-art handoff
 
-Replace `packages/board-map/assets/board-reference.svg` with approved licensed production artwork (or change the Pages assembly step to copy the approved asset). Keep the same `assets/board.svg` publication contract or update the single reference in `apps/web/index.html`.
+Replace `packages/board-map/assets/board-reference.svg` with approved production artwork (or change the Pages assembly step to copy the approved asset). Keep the same `assets/board.svg` publication contract or update the single reference in `apps/web/index.html`.
