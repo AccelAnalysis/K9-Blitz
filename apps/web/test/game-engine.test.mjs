@@ -8,6 +8,7 @@ import {
   applySpaceEffect,
   createGame,
   dieFromRandom,
+  drawTrainerCard,
   rollDice,
 } from "../game-engine.js";
 
@@ -24,7 +25,7 @@ test("movement clamps at start and finish", () => {
   assert.equal(advancePosition(LAST_SPACE - 1, 12), LAST_SPACE);
 });
 
-test("game state initializes 2-4 unique players", () => {
+test("game state initializes 2-4 unique players under Digital Rules v1", () => {
   const game = createGame([
     { id: "p1", name: "A", pawnId: "red", dogId: "max", controllerType: "human" },
     { id: "p2", name: "B", pawnId: "blue", dogId: "luna", controllerType: "computer" },
@@ -33,6 +34,24 @@ test("game state initializes 2-4 unique players", () => {
   assert.equal(game.players.length, 2);
   assert.equal(game.players[1].position, 0);
   assert.equal(game.startedAt, 123);
+  assert.equal(game.rulesVersion, "1.0.0");
+  assert.equal(game.deckCursor.drawPile.length, 12);
+});
+
+test("Trainer Card draws are random without replacement and persist through deckCursor", () => {
+  const game = createGame([
+    { id: "p1", name: "A", pawnId: "red", dogId: "max", controllerType: "human" },
+    { id: "p2", name: "B", pawnId: "blue", dogId: "luna", controllerType: "human" },
+  ], () => 1);
+  const first = drawTrainerCard(game, () => 0);
+  assert.equal(first.card.id, "good-behavior");
+  assert.equal(first.nextCursor.drawPile.length, 11);
+  assert.deepEqual(first.nextCursor.discardPile, ["good-behavior"]);
+
+  const second = drawTrainerCard({ ...game, deckCursor: first.nextCursor }, () => 0);
+  assert.notEqual(second.card.id, first.card.id);
+  assert.equal(second.nextCursor.drawPile.length, 10);
+  assert.equal(second.nextCursor.discardPile.length, 2);
 });
 
 test("space effects never create negative token inventory", () => {
