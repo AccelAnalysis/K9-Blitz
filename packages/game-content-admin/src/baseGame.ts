@@ -1,3 +1,13 @@
+import {
+  DIGITAL_BASE_BOARD_SPACES,
+  DIGITAL_BASE_COMPETITION_TRACK,
+  DIGITAL_BASE_DOGS,
+  DIGITAL_BASE_RULES,
+  DIGITAL_BASE_TOKENS,
+  DIGITAL_BASE_TRAINER_CARDS,
+  DIGITAL_CONTENT_VERSION,
+  DIGITAL_RULES_VERSION,
+} from "../../core-game/src/baseGame.ts";
 import type {
   AssetInventoryItem,
   BoardSpaceContentDefinition,
@@ -17,143 +27,22 @@ import type {
   TokenContentDefinition,
   TrainerCardContentDefinition,
   TrainerDeckContentDefinition,
-} from "./types.ts";
-import type { BoardSpaceRegistry, RuleCapabilityRegistry } from "./ports.ts";
+} from "./types.js";
+import type { BoardSpaceRegistry, RuleCapabilityRegistry } from "./ports.js";
 
-export const BASE_GAME_RULES_VERSION = "k9-blitz-digital-1.0";
-export const BASE_GAME_CONTENT_VERSION = "launch-1.0";
+export const BASE_GAME_RULES_VERSION = DIGITAL_RULES_VERSION;
+export const BASE_GAME_CONTENT_VERSION = DIGITAL_CONTENT_VERSION;
 export const BASE_GAME_AUTHORIZED_AT = "2026-08-13T22:32:00-04:00";
-export const BASE_GAME_AUTHORIZATION_BASIS = "owner-authorized-digital-rules";
-
-const PAWNS = [
-  { id: "red", label: "Red", color: "#d83a35" },
-  { id: "blue", label: "Blue", color: "#1688c9" },
-  { id: "green", label: "Green", color: "#24a257" },
-  { id: "yellow", label: "Yellow", color: "#f5c938" },
-] as const;
-
-const DOGS = [
-  { id: "max", name: "Max", breed: "Beagle", icon: "🐶", note: "K9 Blitz dog profile" },
-  { id: "luna", name: "Luna", breed: "Corgi", icon: "🐕", note: "K9 Blitz dog profile" },
-  { id: "rookie", name: "Rookie", breed: "Training Dog", icon: "🦮", note: "K9 Blitz Digital Rules v1 profile" },
-  { id: "ace", name: "Ace", breed: "Competition Dog", icon: "🐕‍🦺", note: "K9 Blitz Digital Rules v1 profile" },
-] as const;
-
-const POINTS = [
-  [9, 88], [18, 89], [23, 89], [28, 90], [33, 88], [37, 83], [40, 78],
-  [35, 71], [31, 69], [27, 69], [23, 70], [19, 71], [14, 70], [9, 67],
-  [8, 62], [11, 57], [15, 55], [19, 55], [23, 56], [27, 55], [31, 52],
-  [32, 47], [27, 44], [23, 44], [19, 44], [14, 43], [10, 40], [8, 34],
-  [8, 28], [10, 22], [13, 18], [17, 17], [21, 17], [25, 17], [30, 19],
-  [34, 23], [38, 28], [42, 31], [46, 33], [50, 34], [55, 34], [60, 33],
-  [64, 29], [68, 24], [72, 19], [77, 16], [82, 17], [87, 20], [91, 25],
-  [94, 31], [94, 37], [91, 43], [86, 41], [82, 41], [77, 41], [72, 44],
-  [70, 50], [73, 50], [77, 50], [82, 51], [86, 51], [90, 52], [92, 56],
-  [92, 61], [90, 65], [87, 66], [84, 67], [83, 72], [84, 77], [86, 81],
-  [89, 84], [91, 86],
-] as const;
-
-const SPECIAL: Readonly<Record<number, { readonly type: string; readonly title: string; readonly text: string }>> = {
-  0: { type: "normal", title: "Start", text: "Every trainer begins here." },
-  2: { type: "training", title: "K9 Academy", text: "Training day! Advance one Competition step." },
-  4: { type: "training", title: "Obedience Class", text: "Great focus! Earn one Paw Token." },
-  9: { type: "trainer", title: "Trainer Card", text: "Draw a Trainer Card." },
-  14: { type: "daycare", title: "Doggy Daycare", text: "A playful break. Earn one Paw Token." },
-  15: { type: "agility", title: "Agility Run", text: "Complete the course and advance one Competition step." },
-  19: { type: "vet", title: "Vet Check", text: "Routine checkup. Spend one Paw Token if you have one." },
-  20: { type: "training", title: "Obedience Class", text: "Good manners! Earn one Paw Token." },
-  22: { type: "trainer", title: "Trainer Card", text: "Draw a Trainer Card." },
-  28: { type: "token", title: "Pawsitive Park", text: "Playtime reward: collect one Paw Token." },
-  32: { type: "trainer", title: "Trainer Card", text: "Draw a Trainer Card." },
-  36: { type: "token", title: "Treat Stop", text: "Good dog! Collect two Paw Tokens." },
-  42: { type: "trainer", title: "Trainer Card", text: "Draw a Trainer Card." },
-  48: { type: "training", title: "Training Challenge", text: "Advance one Competition step." },
-  52: { type: "token", title: "Treat Stop", text: "Collect two Paw Tokens." },
-  56: { type: "competition", title: "Competition Zone", text: "Show what you learned: advance one Competition step." },
-  58: { type: "vet", title: "Vet Check", text: "Spend one Paw Token if you have one." },
-  62: { type: "trainer", title: "Trainer Card", text: "Draw a Trainer Card." },
-  65: { type: "token", title: "Treat Stop", text: "Collect two Paw Tokens." },
-  67: { type: "training", title: "Trick Learned", text: "Advance one Competition step." },
-  71: { type: "finish", title: "Finish", text: "You made it to the Barkley Ville winner's podium!" },
-};
-
-const BOARD_SPACES = POINTS.map(([x, y], index) => ({
-  id: `space-${index}`,
-  index,
-  x,
-  y,
-  ...(SPECIAL[index] ?? {
-    type: index % 5 === 0 ? "token" : "normal",
-    title: index % 5 === 0 ? "Paw Bonus" : "Barkley Ville",
-    text: index % 5 === 0 ? "Collect one Paw Token." : "Keep training and have fun!",
-  }),
-}));
-
-const TRAINER_CARDS = [
-  { id: "good-behavior", title: "Good Behavior!", text: "Your dog nailed the exercise. Collect 2 Paw Tokens.", effect: { type: "tokens", amount: 2 }, icon: "⭐" },
-  { id: "quick-study", title: "Quick Study", text: "Advance 1 Competition step.", effect: { type: "competition", amount: 1 }, icon: "🎓" },
-  { id: "zoomies", title: "Zoomies!", text: "Move ahead 2 spaces. Do not resolve the destination space.", effect: { type: "move", amount: 2 }, icon: "💨" },
-  { id: "water-break", title: "Water Break", text: "Take a breather. No movement change.", effect: { type: "none" }, icon: "💧" },
-  { id: "treat-pouch", title: "Treat Pouch", text: "Collect 1 Paw Token.", effect: { type: "tokens", amount: 1 }, icon: "🦴" },
-  { id: "practice-pays", title: "Practice Pays", text: "Advance 2 Competition steps.", effect: { type: "competition", amount: 2 }, icon: "🏅" },
-  { id: "distracted", title: "Squirrel!", text: "Move back 1 space. Do not resolve the destination space.", effect: { type: "move", amount: -1 }, icon: "🐿️" },
-  { id: "second-chance", title: "Second Chance", text: "Take another turn after this one.", effect: { type: "extraTurn" }, icon: "🎲" },
-  { id: "park-pals", title: "Park Pals", text: "Collect 1 Paw Token and advance 1 Competition step.", effect: { type: "combo", tokens: 1, competition: 1 }, icon: "🐾" },
-  { id: "groomed", title: "Freshly Groomed", text: "Looking sharp! Collect 2 Paw Tokens.", effect: { type: "tokens", amount: 2 }, icon: "✨" },
-  { id: "training-bonus", title: "Trainer's Bonus", text: "Move ahead 1 space and collect 1 Paw Token. Do not resolve the destination space.", effect: { type: "comboMove", move: 1, tokens: 1 }, icon: "📣" },
-  { id: "calm-focus", title: "Calm & Focused", text: "Advance 1 Competition step.", effect: { type: "competition", amount: 1 }, icon: "🧠" },
-] as const;
-
-const COMPETITION_ICONS = ["🐾", "🦴", "🥣", "🐶", "🛝", "🥏", "🐕", "🏆"] as const;
-
-const HELP = {
-  objective: "Be the first trainer to guide your dog from Start through Barkley Ville to the Finish podium.",
-  turn: "Roll two six-sided dice, move forward by the total, stop at Finish if you would overshoot, then resolve the landing space once.",
-  trainerCards: "Trainer Cards resolve immediately. Card movement never triggers the destination space in Digital Rules v1.0.",
-  tokens: "Paw Tokens are earned from spaces and cards. Vet Check spends one token when available; token inventory never becomes negative.",
-  competition: "The K9 Competition Track has eight steps. Completion is an achievement recorded in results but is not required to win v1.0.",
-  victory: "The first trainer to reach Finish wins immediately.",
-} as const;
-
-const DIGITAL_RULES = {
-  id: BASE_GAME_RULES_VERSION,
-  name: "K9 Blitz Digital Rules",
-  displayVersion: "1.0",
-  players: { min: 2, max: 4 },
-  turnOrder: "setup-order",
-  diceCount: 2,
-  movement: "sum-forward-clamp-at-finish",
-  resolveLandingOnce: true,
-  trainerCardMovementTriggersLanding: false,
-  competitionMaximum: 8,
-  victory: "first-to-finish",
-  hiddenInformation: false,
-} as const;
-
-export const BASE_GAME_WEB_CATALOG = {
-  schemaVersion: 1,
-  rulesVersion: BASE_GAME_RULES_VERSION,
-  contentVersion: BASE_GAME_CONTENT_VERSION,
-  editionName: "K9 Blitz Digital Rules v1.0",
-  authorizationBasis: BASE_GAME_AUTHORIZATION_BASIS,
-  authorizedAt: BASE_GAME_AUTHORIZED_AT,
-  digitalRules: DIGITAL_RULES,
-  pawns: PAWNS,
-  dogs: DOGS,
-  boardSpaces: BOARD_SPACES,
-  trainerCards: TRAINER_CARDS,
-  competitionIcons: COMPETITION_ICONS,
-  help: HELP,
-};
+export const BASE_GAME_AUTHORIZATION_BASIS = "owner-authorized-digital-adaptation";
 
 const AUTHOR = "owner-authorized-digital-rules";
-const TAGS = ["base-game", "digital-edition-1", "owner-authorized"] as const;
+const TAGS = ["base-game", "digital-rules-v1", "owner-authorized"] as const;
 
 function metadata<T extends ContentType>(id: string, contentType: T, title: string): ContentMetadata & { contentType: T } {
   return {
     id,
     contentType,
-    slug: id,
+    slug: id.replaceAll(":", "-"),
     title,
     status: "published",
     verificationStatus: "qa-verified",
@@ -166,225 +55,197 @@ function metadata<T extends ContentType>(id: string, contentType: T, title: stri
   };
 }
 
-export const BASE_GAME_DOG_CONTENT: readonly DogContentDefinition[] = DOGS.map((dog) => ({
+export const BASE_GAME_DOG_CONTENT: readonly DogContentDefinition[] = DIGITAL_BASE_DOGS.map((dog) => ({
   ...metadata(dog.id, "dog", dog.name),
-  description: dog.note,
-  runtime: {
-    id: dog.id,
-    name: dog.name,
-    breed: dog.breed,
-    attributes: { edition: "Digital Edition 1.0" },
-    skills: [],
-    specialAbilityIds: [],
-  },
+  runtime: dog,
+  description: `${dog.name} is a selectable launch dog profile. Dog selection is presentation/identity only in Digital Rules v1.0.`,
 }));
 
 export const BASE_GAME_TRAINER_DECK: TrainerDeckContentDefinition = {
-  ...metadata("trainer-deck-base", "trainer-deck", "Barkley Ville Trainer Cards"),
-  deckId: "trainer-deck-base",
-  description: "Twelve-card owner-authorized Trainer deck for K9 Blitz Digital Rules v1.0.",
+  ...metadata("trainer", "trainer-deck", "Barkley Ville Trainer Cards"),
+  deckId: "trainer",
+  description: "Twelve-card cyclic launch deck for K9 Blitz Digital Rules v1.0.",
 };
 
-type WebEffect = (typeof TRAINER_CARDS)[number]["effect"];
-function coreEffect(effect: WebEffect): TrainerCardContentDefinition["runtime"]["effects"][number] {
-  switch (effect.type) {
-    case "tokens": return { effectId: "award-paw-tokens", parameters: { amount: effect.amount } };
-    case "competition": return { effectId: "advance-competition", parameters: { amount: effect.amount } };
-    case "move": return { effectId: "move-spaces", parameters: { amount: effect.amount } };
-    case "extraTurn": return { effectId: "extra-turn" };
-    case "combo": return { effectId: "award-and-advance", parameters: { tokens: effect.tokens, competition: effect.competition } };
-    case "comboMove": return { effectId: "move-and-award", parameters: { move: effect.move, tokens: effect.tokens } };
-    case "none": return { effectId: "no-op" };
-  }
-}
+export const BASE_GAME_TRAINER_CARD_CONTENT: readonly TrainerCardContentDefinition[] =
+  DIGITAL_BASE_TRAINER_CARDS.map((card) => ({
+    ...metadata(card.id, "trainer-card", card.title),
+    runtime: card,
+    rulesText: card.text,
+  }));
 
-export const BASE_GAME_TRAINER_CARD_CONTENT: readonly TrainerCardContentDefinition[] = TRAINER_CARDS.map((card) => ({
-  ...metadata(card.id, "trainer-card", card.title),
-  rulesText: card.text,
-  runtime: {
-    id: card.id,
-    deckId: BASE_GAME_TRAINER_DECK.id,
-    title: card.title,
-    text: card.text,
-    effects: [coreEffect(card.effect)],
-    tags: ["base-game"],
-  },
+export const BASE_GAME_TOKEN_CONTENT: readonly TokenContentDefinition[] = DIGITAL_BASE_TOKENS.map((token) => ({
+  ...metadata(token.id, "token", token.label),
+  runtime: token,
+  rulesText: "Paw Tokens are earned from spaces/cards; Vet Check spends one when available; inventory cannot become negative.",
 }));
 
-export const BASE_GAME_TOKEN: TokenContentDefinition = {
-  ...metadata("paw-token", "token", "Paw Token"),
-  rulesText: HELP.tokens,
-  runtime: { id: "paw-token", label: "Paw Token", tags: ["currency", "training"] },
+export const BASE_GAME_BOARD_CONTENT: readonly BoardSpaceContentDefinition[] =
+  DIGITAL_BASE_BOARD_SPACES.map((space) => ({
+    ...metadata(space.spaceId, "board-space-content", space.actions[0]?.label ?? `Barkley Ville ${space.spaceId}`),
+    runtime: space,
+  }));
+
+const ICON_LABELS: Readonly<Record<string, string>> = {
+  "competition-paw": "Paw Basics",
+  "competition-bone": "Treat Manners",
+  "competition-bowl": "Care Routine",
+  "competition-dog": "Dog Skills",
+  "competition-agility": "Agility",
+  "competition-frisbee": "Play & Recall",
+  "competition-show-dog": "Show Ring",
+  "competition-trophy": "Champion",
 };
 
-function spaceActions(space: (typeof BOARD_SPACES)[number]): BoardSpaceContentDefinition["runtime"]["actions"] {
-  const baseId = `${space.id}-land`;
-  switch (space.type) {
-    case "trainer": return [{ id: baseId, label: "Draw Trainer Card", trigger: "land", resolverId: "draw-trainer-card" }];
-    case "vet": return [{ id: baseId, label: "Vet Check", trigger: "land", resolverId: "spend-paw-token", parameters: { amount: 1 } }];
-    case "daycare": return [{ id: baseId, label: "Doggy Daycare", trigger: "land", resolverId: "award-paw-tokens", parameters: { amount: 1 } }];
-    case "token": return [{ id: baseId, label: space.title, trigger: "land", resolverId: "award-paw-tokens", parameters: { amount: space.title === "Treat Stop" ? 2 : 1 } }];
-    case "training":
-      return [{ id: baseId, label: space.title, trigger: "land", resolverId: space.title === "Obedience Class" ? "award-paw-tokens" : "advance-competition", parameters: { amount: 1 } }];
-    case "agility":
-    case "competition": return [{ id: baseId, label: space.title, trigger: "land", resolverId: "advance-competition", parameters: { amount: 1 } }];
-    case "finish": return [{ id: baseId, label: "Finish Game", trigger: "land", resolverId: "declare-winner" }];
-    default: return [];
-  }
+function iconDataUri(label: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="#f7f3ea"/><text x="48" y="48" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="10" fill="#252932">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-export const BASE_GAME_BOARD_CONTENT: readonly BoardSpaceContentDefinition[] = BOARD_SPACES.map((space) => ({
-  ...metadata(space.id, "board-space-content", space.title),
-  runtime: { spaceId: space.id, actions: spaceActions(space) },
-}));
+export const BASE_GAME_COMPETITION_MEDIA: readonly MediaAssetDefinition[] =
+  DIGITAL_BASE_COMPETITION_TRACK.stages.flatMap((stage) => stage.iconAssetId ? [{
+    ...metadata(stage.iconAssetId, "media-asset", `${stage.label} icon`),
+    assetType: "icon" as const,
+    uri: iconDataUri(ICON_LABELS[stage.iconAssetId] ?? stage.label),
+    mimeType: "image/svg+xml",
+    altText: `${stage.label} competition icon`,
+    sourceProvenance: "Owner-authorized Digital Rules v1 semantic icon placeholder.",
+    rightsStatus: "confirmed" as const,
+  }] : []);
+
+export const BASE_GAME_COMPETITION: CompetitionContentDefinition = {
+  ...metadata(DIGITAL_BASE_COMPETITION_TRACK.id, "competition", "K9 Competition Track"),
+  runtime: DIGITAL_BASE_COMPETITION_TRACK,
+  description: "Eight sequential progress stages; completion is an achievement but is not required for victory in Digital Rules v1.0.",
+};
 
 export const BASE_GAME_CHALLENGES: readonly ChallengeContentDefinition[] = [
-  { ...metadata("challenge-obedience", "challenge", "Obedience Focus"), description: "Complete a focused obedience training exercise.", resolverId: "challenge-obedience" },
-  { ...metadata("challenge-agility", "challenge", "Agility Sprint"), description: "Complete a short agility course.", resolverId: "challenge-agility" },
-  { ...metadata("challenge-grooming", "challenge", "Grooming Ready"), description: "Prepare the dog for presentation and handling.", resolverId: "challenge-grooming" },
-  { ...metadata("challenge-vet", "challenge", "Wellness Check"), description: "Complete a routine wellness checkpoint.", resolverId: "challenge-vet" },
+  { ...metadata("challenge-obedience", "challenge", "Obedience Focus"), description: "Obedience training reward flow.", resolverId: "GAIN_PAW_TOKENS", parameters: { amount: 1 } },
+  { ...metadata("challenge-agility", "challenge", "Agility Run"), description: "Agility training progress flow.", resolverId: "ADVANCE_COMPETITION", parameters: { amount: 1 } },
+  { ...metadata("challenge-training", "challenge", "Training Challenge"), description: "General training progress flow.", resolverId: "ADVANCE_COMPETITION", parameters: { amount: 1 } },
+  { ...metadata("challenge-vet", "challenge", "Vet Check"), description: "Routine wellness resource check.", resolverId: "SPEND_PAW_TOKENS", parameters: { amount: 1, minimum: 0 } },
 ];
 
 export const BASE_GAME_REWARDS: readonly RewardContentDefinition[] = [
-  { ...metadata("reward-paw-token", "reward", "Paw Token Reward"), description: "Award one Paw Token.", resolverId: "reward-paw-token", parameters: { amount: 1 } },
-  { ...metadata("reward-two-paw-tokens", "reward", "Two Paw Token Reward"), description: "Award two Paw Tokens.", resolverId: "reward-paw-token", parameters: { amount: 2 } },
-  { ...metadata("reward-competition-step", "reward", "Competition Progress"), description: "Advance one Competition step.", resolverId: "reward-competition-step", parameters: { amount: 1 } },
+  { ...metadata("reward-paw-token", "reward", "Paw Token Reward"), description: "Award Paw Tokens.", resolverId: "GAIN_PAW_TOKENS", parameters: { amount: 1 } },
+  { ...metadata("reward-competition-step", "reward", "Competition Progress"), description: "Advance Competition progress.", resolverId: "ADVANCE_COMPETITION", parameters: { amount: 1 } },
+  { ...metadata("reward-extra-turn", "reward", "Extra Turn"), description: "Grant one extra turn.", resolverId: "GRANT_EXTRA_TURN" },
+  { ...metadata("achievement:k9-competition-complete", "reward", "K9 Competition Complete"), description: "Record completion of the eight-stage Competition Track.", resolverId: "COMPETITION_COMPLETE" },
 ];
 
 export const BASE_GAME_PENALTIES: readonly PenaltyContentDefinition[] = [
-  { ...metadata("penalty-vet-token", "penalty", "Vet Check Cost"), description: "Spend one Paw Token if available.", resolverId: "penalty-spend-paw-token", parameters: { amount: 1 } },
-  { ...metadata("penalty-move-back", "penalty", "Move Back"), description: "Move backward the configured number of spaces.", resolverId: "penalty-move-back", parameters: { amount: 1 } },
+  { ...metadata("penalty-vet-token", "penalty", "Vet Check Cost"), description: "Spend one Paw Token if available.", resolverId: "SPEND_PAW_TOKENS", parameters: { amount: 1, minimum: 0 } },
+  { ...metadata("penalty-move-back", "penalty", "Move Back"), description: "Move backward without resolving the destination.", resolverId: "MOVE", parameters: { amount: -1, resolveDestination: false } },
 ];
 
-export const BASE_GAME_COMPETITION: CompetitionContentDefinition = {
-  ...metadata("k9-competition-track", "competition", "K9 Competition Track"),
-  description: HELP.competition,
-  runtime: {
-    id: "k9-competition-track",
-    stages: COMPETITION_ICONS.map((icon, index) => ({
-      id: `competition-step-${index + 1}`,
-      label: index === COMPETITION_ICONS.length - 1 ? "Champion" : `Competition Step ${index + 1}`,
-      prerequisiteStageIds: index === 0 ? [] : [`competition-step-${index}`],
-      requirementIds: [],
-      rewardIds: [],
-    })),
-  },
-};
+const HELP = {
+  objective: "Be the first trainer to guide a dog from Start through Barkley Ville to Finish.",
+  turn: "Roll two six-sided dice, move by the sum, clamp at Finish, resolve the landing space once, then pass play unless an extra turn was granted.",
+  cards: "Trainer Cards resolve immediately in their versioned cyclic order. Movement caused by a card does not resolve the destination space.",
+  tokens: "Paw Tokens are a reward/spend resource and cannot become negative.",
+  competition: "The K9 Competition Track has eight sequential stages and is not required to win Digital Rules v1.0.",
+  victory: "The first player to reach Finish wins; an exact roll is not required.",
+} as const;
 
-export const BASE_GAME_HELP_CONTENT: readonly HelpContentDefinition[] = Object.entries(HELP).map(([key, value]) => ({
-  ...metadata(`help-${key}`, "help", key.replaceAll("-", " ").replace(/^./, (first) => first.toUpperCase())),
-  category: key === "tokens" ? "token" : key === "competition" ? "competition" : "rule",
-  shortText: value,
-  fullText: value,
+export const BASE_GAME_HELP_CONTENT: readonly HelpContentDefinition[] = Object.entries(HELP).map(([key, text]) => ({
+  ...metadata(`help-${key}`, "help", key[0]!.toUpperCase() + key.slice(1)),
+  category: key === "tokens" ? "token" : key === "competition" ? "competition" : key === "cards" ? "card" : "rule",
+  shortText: text,
+  fullText: text,
   imageAssetIds: [],
   relatedContentIds: [],
 }));
 
-export const BASE_GAME_SETTINGS: readonly GameSettingDefinition[] = Object.entries(DIGITAL_RULES).map(([key, value]) => ({
+export const BASE_GAME_SETTINGS: readonly GameSettingDefinition[] = Object.entries(DIGITAL_BASE_RULES).map(([key, value]) => ({
   ...metadata(`setting-${key}`, "game-setting", key),
   key,
   scope: "ruleset",
   value,
-  description: `K9 Blitz Digital Rules v1.0 setting: ${key}.`,
+  description: `Authoritative Digital Rules v1.0 setting group: ${key}.`,
 }));
 
-export const BASE_GAME_MEDIA: readonly MediaAssetDefinition[] = [
-  { ...metadata("media-board", "media-asset", "Barkley Ville Board"), assetType: "board", uri: "./assets/board.svg", mimeType: "image/svg+xml", altText: "K9 Blitz Barkley Ville game board", sourceProvenance: "Owner-authorized K9 Blitz digital board asset.", rightsStatus: "confirmed" },
-  { ...metadata("media-logo", "media-asset", "K9 Blitz Mark"), assetType: "logo", uri: "./assets/favicon.svg", mimeType: "image/svg+xml", altText: "K9 Blitz logo mark", sourceProvenance: "Owner-authorized K9 Blitz digital mark.", rightsStatus: "confirmed" },
+const INVENTORY: readonly (readonly [string, AssetInventoryItem["componentCategory"], string, boolean])[] = [
+  ["inventory-board", "board", "Board and route", false],
+  ["inventory-rulebook", "rulebook", "Digital Rules v1.0", true],
+  ["inventory-trainer-cards", "trainer-card", "Trainer Card set", true],
+  ["inventory-dog-cards", "dog-card", "Dog profiles", true],
+  ["inventory-token", "token", "Paw Token", true],
+  ["inventory-pawns", "pawn", "Launch pawns", true],
+  ["inventory-dice", "dice", "Two six-sided dice", true],
+  ["inventory-help", "player-aid", "Rules and help", true],
+  ["inventory-competition", "competition-track", "K9 Competition Track", true],
+  ["inventory-logo", "packaging-logo", "K9 Blitz identity", true],
 ];
 
-const ASSET_INVENTORY_ROWS: readonly (readonly [string, AssetInventoryItem["componentCategory"], string])[] = [
-  ["inventory-board", "board", "Board and track"],
-  ["inventory-rulebook", "rulebook", "Digital Edition rules"],
-  ["inventory-trainer-cards", "trainer-card", "Trainer Card set"],
-  ["inventory-dog-cards", "dog-card", "Dog profiles"],
-  ["inventory-token", "token", "Paw Token"],
-  ["inventory-pawns", "pawn", "Player pawns"],
-  ["inventory-dice", "dice", "Two six-sided dice"],
-  ["inventory-help", "player-aid", "Rules and help"],
-  ["inventory-competition", "competition-track", "K9 Competition Track"],
-  ["inventory-logo", "packaging-logo", "K9 Blitz identity"],
-];
-
-export const BASE_GAME_ASSET_INVENTORY: readonly AssetInventoryItem[] = ASSET_INVENTORY_ROWS.map(([id, componentCategory, title]) => ({
+export const BASE_GAME_ASSET_INVENTORY: readonly AssetInventoryItem[] = INVENTORY.map(([id, componentCategory, title, artComplete]) => ({
   ...metadata(id, "asset-inventory-item", title),
   componentCategory,
   physicalReferenceStatus: "reference-only",
   frontImageStatus: "not-applicable",
   backImageStatus: "not-applicable",
   rulesCaptured: true,
-  digitalArtworkComplete: true,
+  digitalArtworkComplete: artComplete,
   contentRecordComplete: true,
   qaVerified: true,
   rightsStatus: "confirmed",
-  notes: "Completed for the owner-authorized Digital Edition 1.0 baseline; not represented as a verbatim physical-rulebook transcription.",
+  notes: "Inventory status for the owner-authorized digital edition; physical-source fidelity is tracked separately from digital product authority.",
 }));
 
-const BASE_COMPONENT_ENTITIES: readonly CatalogEntity[] = [
+const COMPONENTS: readonly CatalogEntity[] = [
   ...BASE_GAME_DOG_CONTENT,
   BASE_GAME_TRAINER_DECK,
   ...BASE_GAME_TRAINER_CARD_CONTENT,
-  BASE_GAME_TOKEN,
+  ...BASE_GAME_TOKEN_CONTENT,
   ...BASE_GAME_BOARD_CONTENT,
   ...BASE_GAME_CHALLENGES,
   ...BASE_GAME_REWARDS,
   ...BASE_GAME_PENALTIES,
   BASE_GAME_COMPETITION,
+  ...BASE_GAME_COMPETITION_MEDIA,
   ...BASE_GAME_HELP_CONTENT,
   ...BASE_GAME_SETTINGS,
-  ...BASE_GAME_MEDIA,
   ...BASE_GAME_ASSET_INVENTORY,
 ];
 
 export const BASE_GAME_CONTENT_PACK: ContentPackDefinition = {
-  ...metadata("base-game-pack", "content-pack", "K9 Blitz Base Game"),
-  version: BASE_GAME_CONTENT_VERSION,
-  compatibleRulesetIds: ["digital-edition-rules"],
-  entities: BASE_COMPONENT_ENTITIES.map((entity) => ({ id: entity.id, revision: entity.revision })),
+  ...metadata(`k9-blitz-base-${DIGITAL_CONTENT_VERSION}`, "content-pack", "K9 Blitz Base Game"),
+  version: DIGITAL_CONTENT_VERSION,
+  compatibleRulesetIds: [DIGITAL_RULES_VERSION],
+  entities: COMPONENTS.map((entity) => ({ id: entity.id, revision: entity.revision })),
   publishedAt: BASE_GAME_AUTHORIZED_AT,
 };
 
 export const BASE_GAME_RULESET: RulesetDefinition = {
-  ...metadata("digital-edition-rules", "ruleset", "K9 Blitz Digital Edition Rules"),
-  version: BASE_GAME_RULES_VERSION,
+  ...metadata(DIGITAL_RULES_VERSION, "ruleset", "K9 Blitz Digital Rules v1.0"),
+  version: DIGITAL_RULES_VERSION,
   contentPacks: [{ id: BASE_GAME_CONTENT_PACK.id, revision: BASE_GAME_CONTENT_PACK.revision }],
   effectiveAt: BASE_GAME_AUTHORIZED_AT,
 };
 
-export const BASE_GAME_CATALOG: readonly CatalogEntity[] = [
-  ...BASE_COMPONENT_ENTITIES,
-  BASE_GAME_CONTENT_PACK,
-  BASE_GAME_RULESET,
-];
+export const BASE_GAME_CATALOG: readonly CatalogEntity[] = [...COMPONENTS, BASE_GAME_CONTENT_PACK, BASE_GAME_RULESET];
 
-const CAPABILITIES = new Set([
-  "trainer-card-effect:award-paw-tokens",
-  "trainer-card-effect:advance-competition",
-  "trainer-card-effect:move-spaces",
-  "trainer-card-effect:extra-turn",
-  "trainer-card-effect:award-and-advance",
-  "trainer-card-effect:move-and-award",
-  "trainer-card-effect:no-op",
-  "board-space-resolver:draw-trainer-card",
-  "board-space-resolver:spend-paw-token",
-  "board-space-resolver:award-paw-tokens",
-  "board-space-resolver:advance-competition",
-  "board-space-resolver:declare-winner",
-  "challenge-resolver:challenge-obedience",
-  "challenge-resolver:challenge-agility",
-  "challenge-resolver:challenge-grooming",
-  "challenge-resolver:challenge-vet",
-  "reward-resolver:reward-paw-token",
-  "reward-resolver:reward-competition-step",
-  "penalty-resolver:penalty-spend-paw-token",
-  "penalty-resolver:penalty-move-back",
-]);
+const TRAINER_EFFECTS = new Set(DIGITAL_BASE_TRAINER_CARDS.flatMap((card) => card.effects.map((effect) => effect.effectId)));
+const BOARD_RESOLVERS = new Set(DIGITAL_BASE_BOARD_SPACES.flatMap((space) => space.actions.map((action) => action.resolverId)));
+const CHALLENGE_RESOLVERS = new Set(BASE_GAME_CHALLENGES.map((challenge) => challenge.resolverId));
+const REWARD_RESOLVERS = new Set(BASE_GAME_REWARDS.map((reward) => reward.resolverId));
+const PENALTY_RESOLVERS = new Set(BASE_GAME_PENALTIES.map((penalty) => penalty.resolverId));
 
 export const BASE_GAME_RULE_CAPABILITY_REGISTRY: RuleCapabilityRegistry = {
-  hasCapability: (kind, capabilityId) => CAPABILITIES.has(`${kind}:${capabilityId}`),
+  hasCapability(kind, capabilityId) {
+    switch (kind) {
+      case "trainer-card-effect": return TRAINER_EFFECTS.has(capabilityId);
+      case "board-space-resolver": return BOARD_RESOLVERS.has(capabilityId);
+      case "challenge-resolver": return CHALLENGE_RESOLVERS.has(capabilityId);
+      case "reward-resolver": return REWARD_RESOLVERS.has(capabilityId);
+      case "penalty-resolver": return PENALTY_RESOLVERS.has(capabilityId);
+      case "competition-requirement": return true;
+      case "dog-special-ability": return false;
+      default: return false;
+    }
+  },
 };
 
-const BOARD_SPACE_IDS = new Set(BOARD_SPACES.map((space) => space.id));
+const BOARD_IDS = new Set(DIGITAL_BASE_BOARD_SPACES.map((space) => space.spaceId));
 export const BASE_GAME_BOARD_SPACE_REGISTRY: BoardSpaceRegistry = {
-  hasBoardSpace: (boardSpaceId) => BOARD_SPACE_IDS.has(boardSpaceId),
+  hasBoardSpace: (boardSpaceId) => BOARD_IDS.has(boardSpaceId),
 };

@@ -1,127 +1,107 @@
 # Game Content & Administration
 
-## Purpose
+## Status
 
-Workstream 6 owns **Content Management** and **Administrative/Game Configuration**. It provides the versioned source of truth that tells the rest of K9 Blitz which dogs, Trainer Cards, token definitions, board-space mechanics content, challenges, rewards/penalties, competition definitions, help, settings, media, content packs, and rulesets are available.
+**Complete for K9 Blitz Digital Rules v1.0 / `launch-1.0`.**
 
-The governing boundary is:
+Workstream 6 owns the lifecycle around game content: catalog administration, validation, publishing/version snapshots, configuration, provenance, asset inventory, and the browser Content Studio. It does not replace the rules engine or create a second mechanics catalog.
 
-> Content describes the game. The authoritative game/core layers execute the game.
+The owner explicitly authorized unavailable legacy details to be created for the digital product. Those decisions are versioned product authority and are not represented as verbatim transcription of unseen physical materials.
 
-This implementation follows `AGENTS.md`: it does not invent missing physical-game behavior; it preserves rule/content versions; and administrative content cannot carry arbitrary scripts or callbacks.
+## Canonical authority chain
 
-## Integration with merged core-game contracts
+The completed system uses one direction of authority:
 
-The catalog does **not** create competing definitions for the mechanics already owned by `packages/core-game`.
+1. `docs/DIGITAL_RULES_V1.md` — human-readable rules authority.
+2. `packages/core-game/src/baseGame.ts` — canonical runtime component definitions.
+3. `content/base-game/catalog.json` — machine-readable release summary/provenance.
+4. `packages/game-content-admin/src/baseGame.ts` — administrative wrappers, release snapshot, capability registry, help/settings, media metadata, and asset inventory.
+5. `apps/web/game-data.js` — GitHub Pages/browser publication projection, with strict compatibility validation.
 
-- `DogContentDefinition.runtime` is the current core `DogDefinition`.
-- `TrainerCardContentDefinition.runtime` is the current core `TrainerCardDefinition`.
-- `TokenContentDefinition.runtime` is the current core `TokenDefinition`.
-- `BoardSpaceContentDefinition.runtime` is the current core `BoardSpaceMechanicsDefinition`.
-- `CompetitionContentDefinition.runtime` is the current core `CompetitionTrackDefinition`.
+Category 6 imports the Core Game definitions directly for Dogs, Trainer Cards, Paw Token, all 72 board-space mechanics records, and the eight-stage K9 Competition Track. It therefore cannot silently drift into a competing meaning of those game objects.
 
-The administrative wrapper adds provenance, verification status, immutable revision history, publishing lifecycle, tags, help/media references, content-pack membership, and audit evidence.
+## Published content
 
-Core IDs and admin IDs are validated for identity where they represent the same object. This prevents an admin record from silently publishing a runtime definition under a different identity.
+The v1.0 administrative release contains:
+
+- 4 launch dog profiles;
+- 1 Trainer deck with 12 versioned cards;
+- Paw Token definition;
+- all 72 board-space mechanics records;
+- reusable challenge, reward, penalty, and achievement records mapped to supported v1 resolvers;
+- the 8-stage K9 Competition Track;
+- rules/help records;
+- versioned game-setting groups;
+- competition icon media metadata;
+- physical/digital asset inventory records;
+- one immutable content-pack snapshot pinned by exact `{ id, revision }` references;
+- one immutable ruleset snapshot pinned to the exact content-pack revision.
+
+Rules ID: `k9-blitz-digital-1.0`  
+Content ID: `launch-1.0`
+
+## Publication lifecycle
+
+The general administration service retains the existing lifecycle:
+
+`draft → published → retired`
+
+Published records are immutable revisions. A change begins a new draft revision rather than mutating history. Content packs pin exact entity revisions, and rulesets pin exact content-pack revisions, so saved games can retain the content/rules snapshot that created them.
+
+The checked-in Digital Rules v1 base catalog is release seed revision 1 and is marked `qa-verified` as **digital product content**. That status does not imply that owner-authored behavior was recovered from a physical rulebook; provenance remains explicit in the canonical catalog and repository guardrails.
 
 ## Rule capability boundary
 
-Content references behavior by stable IDs. The core/rules layer supplies a `RuleCapabilityRegistry` that confirms whether those IDs are actually implemented.
+Administrative content cannot embed arbitrary JavaScript or callbacks. It references stable resolver/effect IDs already represented by the Digital Rules v1 component catalog, including:
 
-Capability kinds currently include:
+- `GAIN_PAW_TOKENS`;
+- `ADVANCE_COMPETITION`;
+- `MOVE`;
+- `NO_EFFECT`;
+- `GRANT_EXTRA_TURN`;
+- `DRAW_TRAINER_CARD`;
+- `SPEND_PAW_TOKENS`;
+- `FINISH_GAME`.
 
-- Trainer Card effects;
-- dog special abilities;
-- board-space resolvers;
-- challenge resolvers;
-- reward resolvers;
-- penalty resolvers;
-- competition requirements.
+Publication validation rejects unknown capabilities, nonexistent board-space IDs, missing dependencies, inconsistent runtime/content IDs, broken competition topology, missing media references, invalid exact revisions, or unconfirmed required rights metadata.
 
-Publication fails when content references an unsupported capability. This is the administrative equivalent of "commands in, events/state out": content selects known behavior but never embeds executable behavior.
+## Content Studio
 
-## Lifecycle and immutable revisions
+`apps/web/admin.html` is the GitHub Pages-safe administrative surface. It is intentionally separate from the player game UI and provides:
 
-Every catalog entity has a stable `id` and a monotonic `revision`.
+- active rules/content version status;
+- dashboards for Dogs, Trainer Cards, Board Spaces, Pawns, Competition Track, Rules & Help, and Game Settings;
+- search and JSON-level record editing;
+- browser-persistent drafts;
+- validation before save or publish;
+- local publication and baseline reset;
+- JSON import/export;
+- browser-local audit history.
 
-1. New content starts as `draft` revision 1.
-2. Each draft update appends the next revision.
-3. Publishing appends an immutable `published` revision.
-4. A published record cannot be directly edited; `startRevision` must explicitly create a new draft from it.
-5. Retirement appends a `retired` revision while retaining historical published revisions.
+### Static-host security boundary
 
-Content packs store exact `{ id, revision }` references. Rulesets store exact published content-pack revisions. A saved game can therefore retain the rule/content snapshot that created it even after later administrative edits.
+GitHub Pages cannot safely hold a repository token or server-side administrator session. Therefore **Publish Locally** affects only the current browser. The running game reads that validated local publication on reload and saves the resulting rules/content version with the match.
 
-## Publication validation
+Repository-wide promotion is explicit: export the validated browser publication, reconcile it into the canonical Core Game/catalog sources, update the applicable rules/content version when semantics change, run `npm run qa`, and merge through GitHub. The Content Studio never places repository credentials in client code.
 
-Before publication, the validator checks as applicable:
+## QA and release gates
 
-- required IDs/titles/slugs;
-- minimum physical-source verification status;
-- runtime/core definition identity consistency;
-- required published dependencies (decks, help, rewards, media);
-- board-space existence through the Board lane registry;
-- registered rule-capability IDs through the Core/Rules lane registry;
-- duplicate skill/action/stage IDs;
-- competition prerequisite integrity;
-- exact published revisions inside content packs and rulesets;
-- optional media-rights policy;
-- asset-inventory QA consistency.
+The canonical repository test discovery automatically includes Category 6 tests. The base-game suite verifies that:
 
-The default policy blocks `unverified` content. Production may strengthen this to require `qa-verified` content and confirmed media rights/provenance.
+- administrative wrappers are exact projections of the current Core Game definitions;
+- every published entity passes the real publication validator under strict QA/rights policy;
+- catalog IDs remain globally unique;
+- all 72 board-space records exist;
+- ruleset/content-pack references are exact.
 
-## Administration permissions
+The Pages content test independently compares browser dogs, Trainer Cards, special-space labels, versions, and Competition size against `content/base-game/catalog.json`, then proves unsupported rule semantics/effects are rejected.
 
-- `player`: read-only published content consumption.
-- `content_editor`: create and revise content drafts; maintain inventory records.
-- `content_publisher`: edit, publish, retire, and inspect audit history.
-- `game_admin`: manage game-configuration drafts and inspect audit history.
-- `system_admin`: all administrative capabilities.
+`tools/qa/build-pages.mjs` packages and validates both the player game and the Content Studio before Pages deployment.
 
-Publication remains an explicit privileged action; hiding an admin control in the UI is never authorization.
+## Asset inventory
 
-## Persistence ports
+The asset inventory is complete as an **administrative inventory**: every required component family has a tracked record, rights status, content status, and QA status. Visual production fidelity remains the Board/Map & Physical Pieces lane's responsibility; Category 6 does not falsely mark a provisional board illustration as a source-verified physical transcription.
 
-The domain exports framework-independent ports:
+## Expansion path
 
-- `ContentStore`;
-- `AuditStore`;
-- `Clock`;
-- `IdGenerator`;
-- `RuleCapabilityRegistry`;
-- `BoardSpaceRegistry`.
-
-`InMemoryContentStore` and `InMemoryAuditStore` provide deterministic adapters for tests and integration work. The Architecture lane can bind the ports to the selected persistent store without changing the content lifecycle.
-
-## Admin UI information architecture
-
-A future administrative application can safely expose:
-
-- Dashboard;
-- Game Content: Dogs, Trainer Decks/Cards, Tokens, Challenges, Rewards/Penalties, Board-Space Content, Competition Content;
-- Rules & Help: rulebook, tutorials, glossary;
-- Media;
-- Game Configuration: Rulesets, Content Packs, Settings;
-- Asset Inventory;
-- Administration Audit Log.
-
-The UI should show lifecycle state, verification state, revision, and dependency/validation failures prominently.
-
-## Physical asset inventory still required
-
-An exact base-game publication remains blocked until authoritative source material is inventoried for:
-
-1. full board and preferably original production artwork;
-2. rulebook;
-3. every Trainer Card, front and back;
-4. every Dog Card, front and back;
-5. every token and its rules/quantity;
-6. every pawn color;
-7. dice specification;
-8. player aids;
-9. K9 Competition Track rules and icon meanings;
-10. packaging/logo artwork;
-11. font identification/licensing information;
-12. original illustrations where available.
-
-No production base-game content pack should be described as complete while these inputs remain unresolved.
+New dogs, Trainer Cards, challenges, artwork, or expansion packs can be added as versioned content without rewriting the administration lifecycle. New executable behavior must first exist as an approved engine/rules capability and must be accompanied by the applicable authority/version update.
