@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { EngineContext, GameState, RandomSource } from "./contracts.ts";
-import { createGameState, executeCommand } from "./engine.ts";
 import {
   createK9BlitzDigitalGameInput,
   K9_BLITZ_DIGITAL_CONTENT_VERSION,
   K9_BLITZ_DIGITAL_RULES_V1,
   K9_BLITZ_DIGITAL_RULES_VERSION,
-} from "./k9BlitzDigitalRules.ts";
+} from "./digitalRulesV1.ts";
+import { createGameState, executeCommand } from "./engine.ts";
 
 class SequenceRandom implements RandomSource {
   #values: number[];
@@ -95,7 +95,7 @@ test("rolls two dice, moves along the route, and resolves Obedience Class", () =
   assert.ok(result.events.some((event) => event.type === "DOMAIN_EVENT" && event.payload.name === "PAW_TOKENS_GAINED"));
 });
 
-test("draws Trainer Cards without replacement and applies card effects", () => {
+test("draws Trainer Cards without replacement, discards them, and applies card effects", () => {
   const ctx = context([4, 5, 0, 0, 0]);
   const started = startGame(ctx);
   const result = executeCommand(started, {
@@ -109,7 +109,8 @@ test("draws Trainer Cards without replacement and applies card effects", () => {
   if (!result.ok) return;
   const player = result.state.domain.players.find((candidate) => candidate.id === "player-1");
   assert.equal(player?.boardSpaceId, "space-9");
-  assert.deepEqual(player?.cardIds, ["good-behavior"]);
+  assert.deepEqual(player?.cardIds, []);
+  assert.equal(player?.data.cardsDrawn, 1);
   assert.equal(player?.tokenIds.length, 2);
   assert.equal(result.state.domain.decks.trainer?.drawPile.length, 11);
   assert.deepEqual(result.state.domain.decks.trainer?.discardPile, ["good-behavior"]);
