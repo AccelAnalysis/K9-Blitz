@@ -2,111 +2,107 @@
 
 ## Purpose
 
-Category 7 provides the technical foundation for all other K9 Blitz workstreams. It establishes boundaries now so board rendering, cards, rules, multiplayer, content administration, and future expansions can evolve independently without creating multiple sources of gameplay truth.
+Category 7 defines the technical and quality contracts that let the board, mechanics, rules, UI, modes, content administration, and deployment evolve without losing gameplay correctness.
+
+The digital-game specification calls for a visual recreation, a standalone TypeScript rules engine, machine-readable game state, local and online modes, persistence, and automated coverage for spaces, cards, tokens, legal/illegal movement, synchronization, reconnect, and restoration. The repository implements those concerns as separable layers. K9 Blitz Digital Rules v1.0 are the current owner-authorized product authority (`docs/DIGITAL_RULES_V1.md`, ADR-0002).
 
 ## Architectural invariants
 
-1. The illustrated board is presentation; the logical board is data.
-2. The rules engine is authoritative for legal state transitions.
-3. The client submits intentions, not authoritative outcomes.
-4. Random outcomes are generated through an authoritative random source and captured as events.
-5. Every accepted state transition increments a monotonic game revision.
-6. Saved games retain `rulesVersion` and `contentVersion`.
-7. Infrastructure is adapter-based; no database or hosting vendor is selected by this foundation alone.
-8. Unknown physical rules remain explicit dependencies rather than implementation guesses.
+1. Illustrated board artwork is presentation; logical board topology/coordinates are data.
+2. A running game has exactly one authority inside its trust boundary.
+3. Production rules logic remains framework independent.
+4. Remote commands represent intent; accepted commands produce state transitions and events.
+5. Random outcomes are reproducible in tests and authoritative at the applicable host.
+6. Remote concurrency uses monotonic revisions and at-most-once command identifiers.
+7. Saved games carry `rulesVersion` and `contentVersion`.
+8. Owner-authored digital rules and source-backed physical facts preserve distinct provenance.
+9. CI and deployment use one canonical quality gate: `npm run qa`.
 
-## Target layers
-
-```text
-Presentation
-  React UI / board renderer / animation / audio
-              |
-              v
-Application orchestration
-  lobby / turn controller / action workflows
-              |
-              v
-Authoritative game engine
-  commands / validation / rules / events
-              |
-              v
-Domain state
-  game / players / board / decks / tokens / competition
-              |
-              v
-Infrastructure adapters
-  persistence / multiplayer transport / auth / content storage
-```
-
-Dependencies point downward. The game engine must not import from presentation or infrastructure.
-
-## Repository topology
+## Current repository topology
 
 ```text
-apps/                     # future runnable applications
+apps/
+  web/                    Static GitHub Pages local/pass-and-play application
+
 packages/
-  game-engine/            # framework-independent authoritative transitions
-  board-model/            # future logical board graph and coordinates
-  game-content/           # future versioned cards/dogs/tokens/challenges
-  shared-types/           # only when cross-package contracts justify extraction
-docs/
-  architecture/
-  quality/
-.github/workflows/
+  board-map/              Board geometry, topology, normalized coordinates, pawn layout
+  core-game/              Dice, Trainer Cards, dogs, tokens, space actions, competition primitives
+  game-content-admin/     Versioned content/admin validation, permissions, publication services
+  game-engine/            Framework-independent authoritative state/command/event engine
+  game-modes/             Lobby, local handoff, online-session/reconnect domain, computer players
+  player-interface/       React player-experience components and pure presentation helpers
+
+tools/qa/                 Test discovery, architecture audit, Pages artifact builder
+
+docs/architecture/        Architecture decisions and boundaries
+docs/quality/             QA strategy, matrix, Definition of Done, release gates
+.github/workflows/         Pull-request/main CI and GitHub Pages deployment
 ```
 
-Do not create packages merely to match this diagram; add them when their owning workstream produces real behavior.
+## Runtime model
 
-## Command boundary
+### GitHub Pages local release
 
-All authoritative mutations enter through a command envelope containing:
+```text
+apps/web UI + local runtime
+   -> K9 Blitz Digital Rules v1.0
+   -> single-browser game authority
+   -> versioned localStorage save
+```
 
-- `commandId` for at-most-once processing protection;
-- `actorPlayerId` for authority checks;
-- `expectedRevision` for stale-state/concurrency detection;
-- a command-specific payload.
+All participants share the device, so the browser is the authority for that local game. This is a deliberate trust boundary, not a server-security claim.
 
-The bootstrap implementation includes `ROLL_DICE` only to prove the architecture. It intentionally records the authoritative dice result without moving a pawn because movement rules and board topology are not yet authoritative in this repository.
+### Production remote/online target
 
-## Event boundary
+```text
+remote client
+   -> authenticated command
+   -> trusted session/service
+   -> packages/game-engine
+   -> atomic snapshot/event persistence
+   -> authoritative events/snapshot broadcast
+```
 
-Accepted commands emit domain events. Events are suitable for animation queues, audio cues, game history, multiplayer broadcasts, persistence/audit trails, and deterministic debugging/replay. Presentation consumes events after the engine has already established the correct state.
+Remote clients never submit dice values, card draws, token awards, legal destinations, competition completion, or winners as authoritative outcomes.
+
+## Command and event boundary
+
+Production remote commands carry `commandId` for at-most-once processing, actor identity for authority checks, `expectedRevision` for stale-state rejection, and typed payload. Accepted commands emit domain events suitable for history, animation, audio, persistence, synchronization, replay, and support evidence.
+
+The Pages runtime is intentionally simpler because it is a shared-device authority. Its behavior is still versioned and tested, but it is not the security model for online play.
 
 ## Randomness
 
-Dice, deck shuffles, token draws, and future random events must use `RandomSource`. Online clients must never assert their own dice/card/token outcome as authoritative. Tests inject deterministic sequences. Production infrastructure will provide the authoritative random implementation at the server/session boundary.
+`packages/game-engine` uses an injected `RandomSource`. Deterministic seeded sources support tests, replay fixtures, and reproducible defect reports. Browser randomness in `apps/web` is acceptable only for local shared-device play. Remote multiplayer resolves randomness at the trusted host.
 
-## Concurrency and multiplayer
+## Board and content boundaries
+
+`packages/board-map` owns logical geometry/topology; renderers own pixels, camera behavior, and visual effects. `packages/core-game` owns reusable component mechanics. `packages/game-content-admin` owns versioned publication/validation concerns. Rule decisions are not hidden inside presentation-only components.
+
+Normalized board coordinates allow one logical map to scale across desktop, tablet, and mobile. Published content uses stable identifiers so artwork can be replaced without changing gameplay identity.
+
+## Persistence and versioning
+
+The current Pages release persists a versioned local snapshot. Future online persistence must support atomic revision replacement, append-oriented/immutable history, reconnect, exact rules/content version retention, and completed-game retention.
+
+Rules/content changes publish a new authority version. Existing saves continue under the version that created them unless an explicit migration exists.
+
+## Quality architecture
+
+`npm run qa` is the executable repository acceptance surface:
 
 ```text
-client command
-   -> authenticate/session authorize
-   -> load authoritative game revision
-   -> execute engine command
-   -> persist new revision atomically
-   -> publish events/snapshot
+strict TypeScript check
+  -> repository architecture audit
+  -> automatic discovery of every package/app/tool test
+  -> prerequisite package builds for dist-based tests
+  -> deterministic unit/domain/integration/complete-game tests
+  -> GitHub Pages artifact assembly
+  -> static syntax/reference/semantic smoke checks
 ```
 
-A command based on a stale revision fails without state mutation. Duplicate command identifiers fail safely. The persistence adapter must eventually provide compare-and-set or transactional semantics so two clients cannot both advance the same revision.
+This prevents a new lane from adding tests that root CI never executes. The architecture audit also protects the framework-independent game-engine boundary and canonical deployment commands.
 
-## Persistence
+## Hosting boundary
 
-No database vendor is chosen in this foundation. The persistence contract must eventually support current authoritative snapshots, immutable or append-oriented event history, game/rules/content versions, atomic revision update, reconnect/resume, and completed-game retention. Vendor selection should be made with the online multiplayer and deployment requirements, not embedded in the rules package.
-
-## Rendering boundary
-
-Board rendering may use React plus a canvas/WebGL renderer such as PixiJS or Phaser, but that choice belongs to the player-experience/board implementation. Renderer responsibilities include board artwork, hit regions, pawn positioning, zoom/pan, animation, and visual effects. It may not decide dice values, legal moves, rewards, or winners.
-
-Normalized board coordinates are recommended for logical-space positions so one board model can scale across desktop, tablet, and mobile layouts.
-
-## Content/version boundary
-
-Cards, dogs, tokens, challenges, space definitions, and expansion content should become data with stable identifiers and immutable published versions. A saved game references the exact published versions it started with so later balancing/content edits cannot mutate a match in progress.
-
-## Security boundary
-
-Treat browser/mobile clients as untrusted for authoritative play. Clients may request actions; the authoritative host validates them. Do not accept client assertions for dice results, card draws, token awards, competition completion, legal movement, or victory.
-
-## Current bootstrap implementation
-
-`packages/game-engine` currently proves framework independence, typed state/command/event contracts, state revisions, turn ownership checks, phase checks, duplicate-command protection, injected/validated dice randomness, explicit events, and deterministic unit tests. It deliberately does not claim the physical K9 Blitz rules are implemented.
+GitHub Pages is sufficient for the current local/pass-and-play release, computer players, responsive board, save/resume, and help experience. Secure remote multiplayer requires a trusted backend/session host and cannot be created by trusting browser JavaScript. See ADR-0003.

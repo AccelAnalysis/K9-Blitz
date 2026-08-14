@@ -4,14 +4,15 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  architecture-and-unit-tests:
+  repository-quality-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,7 +20,5 @@ jobs:
           node-version: 24
       - name: Verify runtime
         run: node --version
-      - name: Type-check architecture contracts
-        run: npm run typecheck
-      - name: Run deterministic engine tests
-        run: npm test
+      - name: Run canonical K9 Blitz QA
+        run: npm run qa

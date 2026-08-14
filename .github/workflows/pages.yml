@@ -17,18 +17,14 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Verify static client syntax
-        run: |
-          node --check apps/web/app.js
-          node --check apps/web/game-data.js
-          node --check apps/web/game-engine.js
-      - name: Test launch game engine
-        run: node --test apps/web/test/*.test.mjs
+      - name: Run canonical K9 Blitz QA
+        run: npm run qa
 
   deploy:
     needs: verify
@@ -38,18 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble Pages artifact
-        run: |
-          rm -rf _site
-          mkdir -p _site/assets
-          cp apps/web/index.html _site/index.html
-          cp apps/web/styles.css _site/styles.css
-          cp apps/web/app.js _site/app.js
-          cp apps/web/game-data.js _site/game-data.js
-          cp apps/web/game-engine.js _site/game-engine.js
-          cp apps/web/assets/favicon.svg _site/assets/favicon.svg
-          cp packages/board-map/assets/board-reference.svg _site/assets/board.svg
-          touch _site/.nojekyll
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Assemble verified Pages artifact
+        run: npm run build:pages
       - name: Check Pages repository activation
         id: pages
         env:

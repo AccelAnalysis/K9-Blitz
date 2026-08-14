@@ -1,0 +1,62 @@
+import { access, copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const outDir = resolve(repoRoot, process.env.K9_PAGES_OUT || "_site");
+const files = [
+  ["apps/web/index.html", "index.html"],
+  ["apps/web/styles.css", "styles.css"],
+  ["apps/web/app.js", "app.js"],
+  ["apps/web/game-data.js", "game-data.js"],
+  ["apps/web/game-engine.js", "game-engine.js"],
+  ["apps/web/assets/favicon.svg", "assets/favicon.svg"],
+  ["packages/board-map/assets/board-reference.svg", "assets/board.svg"]
+];
+
+await rm(outDir, { recursive: true, force: true });
+for (const [source, destination] of files) {
+  const sourcePath = resolve(repoRoot, source);
+  try { await access(sourcePath); } catch { throw new Error(`Pages source is missing: ${source}`); }
+  const destinationPath = resolve(outDir, destination);
+  await mkdir(dirname(destinationPath), { recursive: true });
+  await copyFile(sourcePath, destinationPath);
+}
+await writeFile(resolve(outDir, ".nojekyll"), "", "utf8");
+
+for (const moduleFile of ["app.js", "game-data.js", "game-engine.js"]) {
+  const syntax = spawnSync(process.execPath, ["--check", resolve(outDir, moduleFile)], { stdio: "inherit" });
+  if (syntax.status !== 0) process.exit(syntax.status ?? 1);
+}
+
+const html = await readFile(resolve(outDir, "index.html"), "utf8");
+if (!/<html\s+[^>]*lang=["'][^"']+["']/i.test(html)) throw new Error("Pages index.html must declare a document language.");
+if (!/<meta\s+[^>]*name=["']viewport["']/i.test(html)) throw new Error("Pages index.html must declare a viewport.");
+if (!/<main\b/i.test(html)) throw new Error("Pages index.html must contain a main landmark.");
+
+function assertInsideArtifact(target, label) {
+  const pathFromRoot = relative(outDir, target);
+  if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) throw new Error(`Pages reference escapes artifact root: ${label}`);
+}
+
+const localRefs = new Set();
+for (const match of html.matchAll(/(?:src|href)=["'](\.\/[^"'#?]+)(?:[?#][^"']*)?["']/g)) localRefs.add(match[1]);
+for (const ref of localRefs) {
+  const target = resolve(outDir, ref.slice(2));
+  assertInsideArtifact(target, ref);
+  try { await access(target); } catch { throw new Error(`Pages index references missing artifact: ${ref}`); }
+}
+
+for (const moduleFile of ["app.js", "game-engine.js"]) {
+  const source = await readFile(resolve(outDir, moduleFile), "utf8");
+  for (const match of source.matchAll(/(?:from\s+|import\s*\()\s*["'](\.\/[^"']+)["']/g)) {
+    const target = resolve(outDir, match[1].slice(2));
+    assertInsideArtifact(target, match[1]);
+    try { await access(target); } catch { throw new Error(`${moduleFile} imports missing Pages module: ${match[1]}`); }
+  }
+}
+
+const boardSvg = await readFile(resolve(outDir, "assets/board.svg"), "utf8");
+if (!/<svg\b/i.test(boardSvg)) throw new Error("Pages board artifact is not valid SVG content.");
+console.log(`GitHub Pages artifact assembled and verified at ${outDir}.`);
