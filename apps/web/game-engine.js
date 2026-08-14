@@ -23,6 +23,10 @@ export function advancePosition(position, amount) {
   return Math.max(0, Math.min(LAST_SPACE, position + amount));
 }
 
+function initialTrainerDeck() {
+  return { drawPile: TRAINER_CARDS.map((card) => card.id), discardPile: [] };
+}
+
 export function createGame(players, now = () => Date.now()) {
   if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
     throw new RangeError("K9 Blitz Digital Rules v1.0 supports 2-4 players");
@@ -44,8 +48,10 @@ export function createGame(players, now = () => Date.now()) {
     activePlayerIndex: 0,
     round: 1,
     dice: null,
-    trainerDrawPile: TRAINER_CARDS.map((card) => card.id),
-    trainerDiscardPile: [],
+    // Retain the historical field name because apps/web/app.js persists this
+    // value directly. In v1 it contains the full no-repeat deck state rather
+    // than a numeric sequential cursor.
+    deckCursor: initialTrainerDeck(),
     startedAt,
     updatedAt: startedAt,
     winnerPlayerId: null,
@@ -64,8 +70,11 @@ export function createGame(players, now = () => Date.now()) {
 }
 
 export function drawTrainerCard(state, random = Math.random) {
-  let drawPile = Array.isArray(state.trainerDrawPile) ? [...state.trainerDrawPile] : TRAINER_CARDS.map((card) => card.id);
-  let discardPile = Array.isArray(state.trainerDiscardPile) ? [...state.trainerDiscardPile] : [];
+  const savedDeck = state.deckCursor && typeof state.deckCursor === "object"
+    ? state.deckCursor
+    : initialTrainerDeck();
+  let drawPile = Array.isArray(savedDeck.drawPile) ? [...savedDeck.drawPile] : initialTrainerDeck().drawPile;
+  let discardPile = Array.isArray(savedDeck.discardPile) ? [...savedDeck.discardPile] : [];
   if (drawPile.length === 0) {
     drawPile = [...discardPile];
     discardPile = [];
@@ -81,7 +90,10 @@ export function drawTrainerCard(state, random = Math.random) {
   const card = TRAINER_CARDS.find((candidate) => candidate.id === cardId);
   if (!card) throw new Error(`Unknown Trainer Card ${cardId}`);
   discardPile.push(card.id);
-  return { card, nextDrawPile: drawPile, nextDiscardPile: discardPile };
+  return {
+    card,
+    nextCursor: { drawPile, discardPile },
+  };
 }
 
 export function applyCardEffect(player, card) {
