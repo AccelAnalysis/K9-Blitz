@@ -2,17 +2,21 @@ import { GameModesError } from "./errors.js";
 import type { LobbyState, Player } from "./types.js";
 
 export interface LocalTurnHandoff {
-  readonly previousPlayerId: string | null;
+  readonly previousPlayerId: string;
   readonly nextPlayerId: string;
   readonly requiresPrivacyGate: boolean;
 }
 
 export class LocalPassAndPlaySession {
   readonly #players: readonly Player[];
-  #activeSeatIndex = 0;
+  #activePlayerId: string;
   private readonly privateInformationExists: boolean;
 
-  constructor(lobby: LobbyState, privateInformationExists: boolean) {
+  constructor(
+    lobby: LobbyState,
+    initialActivePlayerId: string,
+    privateInformationExists: boolean,
+  ) {
     if (lobby.configuration.mode !== "local_pass_and_play") {
       throw new GameModesError(
         "INVALID_CONFIGURATION",
@@ -25,22 +29,30 @@ export class LocalPassAndPlaySession {
         "The lobby must be closed for play before a local session starts.",
       );
     }
+    this.#players = [...lobby.players];
+    this.#activePlayerId = this.requirePlayer(initialActivePlayerId).id;
     this.privateInformationExists = privateInformationExists;
-    this.#players = [...lobby.players].sort((a, b) => a.seatNumber - b.seatNumber);
   }
 
-  get activePlayer(): Player {
-    const player = this.#players[this.#activeSeatIndex];
+  private requirePlayer(playerId: string): Player {
+    const player = this.#players.find((candidate) => candidate.id === playerId);
     if (!player) {
-      throw new GameModesError("PLAYER_NOT_FOUND", "No active local player exists.");
+      throw new GameModesError(
+        "PLAYER_NOT_FOUND",
+        `Player ${playerId} is not in this local game.`,
+      );
     }
     return player;
   }
 
-  advanceTurn(): LocalTurnHandoff {
+  get activePlayer(): Player {
+    return this.requirePlayer(this.#activePlayerId);
+  }
+
+  handoffTo(nextPlayerId: string): LocalTurnHandoff {
     const previous = this.activePlayer;
-    this.#activeSeatIndex = (this.#activeSeatIndex + 1) % this.#players.length;
-    const next = this.activePlayer;
+    const next = this.requirePlayer(nextPlayerId);
+    this.#activePlayerId = next.id;
 
     return {
       previousPlayerId: previous.id,
