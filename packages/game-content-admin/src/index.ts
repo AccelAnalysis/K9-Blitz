@@ -4,3 +4,4 @@ export * from "./permissions.ts";
 export * from "./memory.ts";
 export * from "./validation.ts";
 export * from "./service.ts";
+export * from "./baseGame.ts";
