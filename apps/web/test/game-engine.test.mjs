@@ -24,15 +24,39 @@ test("movement clamps at start and finish", () => {
   assert.equal(advancePosition(LAST_SPACE - 1, 12), LAST_SPACE);
 });
 
-test("game state initializes 2-4 unique players", () => {
+test("game state initializes canonical 2-5 player games with Seat 1 first", () => {
   const game = createGame([
     { id: "p1", name: "A", pawnId: "red", dogId: "max", controllerType: "human" },
     { id: "p2", name: "B", pawnId: "blue", dogId: "luna", controllerType: "computer" },
+    { id: "p3", name: "C", pawnId: "green", dogId: "rookie", controllerType: "computer" },
+    { id: "p4", name: "D", pawnId: "yellow", dogId: "ace", controllerType: "computer" },
+    { id: "p5", name: "E", pawnId: "brown", dogId: "scout", controllerType: "computer" },
   ], () => 123);
   assert.equal(game.activePlayerIndex, 0);
-  assert.equal(game.players.length, 2);
-  assert.equal(game.players[1].position, 0);
+  assert.equal(game.players.length, 5);
+  assert.equal(game.players[4].position, 0);
   assert.equal(game.startedAt, 123);
+  assert.equal(game.playerRulesId, "k9-blitz-player-rules-1.0");
+  assert.equal(game.playerRuleProvenance, "owner_authorized_digital");
+});
+
+test("local and solo games require a human trainer in Seat 1", () => {
+  assert.throws(() => createGame([
+    { id: "p1", name: "CPU", pawnId: "red", dogId: "max", controllerType: "computer" },
+    { id: "p2", name: "Human", pawnId: "blue", dogId: "luna", controllerType: "human" },
+  ]), /Seat 1 must be a human trainer/);
+});
+
+test("players require unique pawns and unique dogs", () => {
+  assert.throws(() => createGame([
+    { id: "p1", name: "A", pawnId: "red", dogId: "max", controllerType: "human" },
+    { id: "p2", name: "B", pawnId: "blue", dogId: "max", controllerType: "computer" },
+  ]), /unique dogs/);
+
+  assert.throws(() => createGame([
+    { id: "p1", name: "A", pawnId: "red", dogId: "max", controllerType: "human" },
+    { id: "p2", name: "B", pawnId: "red", dogId: "luna", controllerType: "computer" },
+  ]), /unique pawns/);
 });
 
 test("space effects never create negative token inventory", () => {
