@@ -45,7 +45,11 @@ export class QueuedHumanController<TCommand extends TypedCommand>
 export class ComputerController<TCommand extends TypedCommand>
   implements PlayerController<TCommand>
 {
-  constructor(private readonly tieBreaker: () => number = Math.random) {}
+  private readonly tieBreaker: () => number;
+
+  constructor(tieBreaker: () => number = Math.random) {
+    this.tieBreaker = tieBreaker;
+  }
 
   async chooseAction(legalActions: readonly LegalAction<TCommand>[]): Promise<TCommand> {
     if (legalActions.length === 0) {
