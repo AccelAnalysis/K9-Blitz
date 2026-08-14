@@ -365,9 +365,9 @@ export function closeLobbyForPlay(state: LobbyState): LobbyState {
     ...state,
     setupState: "playing",
     status: "closed",
-    players: state.players.map((player, index) => ({
+    players: state.players.map((player) => ({
       ...player,
-      status: index === 0 ? "active" : "waiting",
+      status: "waiting",
     })),
   };
 }
