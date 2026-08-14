@@ -173,3 +173,27 @@ test("room codes avoid ambiguous characters and support deterministic generation
   assert.equal(code, "AAAAAA");
   assert.match(code, /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
 });
+
+test("online hosts require authenticated remote identity", () => {
+  const configuration = {
+    ...localConfiguration,
+    mode: "online_private",
+    allowReconnect: true,
+  };
+
+  assert.throws(
+    () =>
+      createLobby({
+        gameId: "missing-identity",
+        roomCode: "BARK99",
+        host: {
+          playerId: "p1",
+          displayName: "Remote One",
+          controllerType: "human_remote",
+        },
+        configuration,
+      }),
+    (error) =>
+      error instanceof GameModesError && error.code === "REMOTE_IDENTITY_REQUIRED",
+  );
+});
