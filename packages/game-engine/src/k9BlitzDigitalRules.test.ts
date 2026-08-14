@@ -7,6 +7,7 @@ import {
   K9_BLITZ_DIGITAL_CONTENT_VERSION,
   K9_BLITZ_DIGITAL_RULES_V1,
   K9_BLITZ_DIGITAL_RULES_VERSION,
+  K9_BLITZ_PAW_TOKEN_IDS,
 } from "./digitalRulesV1.ts";
 import { createGameState, executeCommand } from "./engine.ts";
 
@@ -114,6 +115,56 @@ test("draws Trainer Cards without replacement, discards them, and applies card e
   assert.equal(player?.tokenIds.length, 2);
   assert.equal(result.state.domain.decks.trainer?.drawPile.length, 11);
   assert.deepEqual(result.state.domain.decks.trainer?.discardPile, ["good-behavior"]);
+});
+
+test("Trainer Card movement does not trigger a second landing-space effect", () => {
+  // 4+5 lands on Trainer space 9. Card index 10 is Trainer's Bonus: move +1
+  // to Paw Bonus space 10, then gain the card's one Paw Token. Space 10 does
+  // not award a second Paw Token during card movement in Digital Rules v1.
+  const ctx = context([4, 5, 10, 0]);
+  const started = startGame(ctx);
+  const result = executeCommand(started, {
+    type: "ROLL_DICE",
+    commandId: "roll-training-bonus",
+    actorPlayerId: "player-1",
+    expectedRevision: started.revision,
+  }, ctx);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const player = result.state.domain.players.find((candidate) => candidate.id === "player-1");
+  assert.equal(player?.boardSpaceId, "space-10");
+  assert.equal(player?.tokenIds.length, 1);
+  assert.deepEqual(result.state.domain.decks.trainer?.discardPile, ["training-bonus"]);
+});
+
+test("Paw Token awards remain available after all 48 initial markers are held", () => {
+  const ctx = context([1, 1, 0]);
+  const started = startGame(ctx);
+  const exhausted: GameState = {
+    ...started,
+    domain: {
+      ...started.domain,
+      players: started.domain.players.map((player) => player.id === "player-1"
+        ? { ...player, boardSpaceId: "space-3", tokenIds: [...K9_BLITZ_PAW_TOKEN_IDS] }
+        : player),
+      tokens: { ...started.domain.tokens, bag: [], discarded: [] },
+    },
+  };
+
+  const result = executeCommand(exhausted, {
+    type: "ROLL_DICE",
+    commandId: "roll-virtual-token",
+    actorPlayerId: "player-1",
+    expectedRevision: exhausted.revision,
+  }, ctx);
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const player = result.state.domain.players.find((candidate) => candidate.id === "player-1");
+  assert.equal(player?.boardSpaceId, "space-5");
+  assert.equal(player?.tokenIds.length, 49);
+  assert.ok(player?.tokenIds.some((tokenId) => tokenId.startsWith("paw-token-digital-")));
 });
 
 test("Second Chance grants exactly one immediate extra turn", () => {
