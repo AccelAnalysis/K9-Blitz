@@ -1,3 +1,4 @@
+export * from "./baseGame.js";
 export * from "./cards.js";
 export * from "./competition.js";
 export * from "./dice.js";
