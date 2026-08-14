@@ -25,7 +25,7 @@ export function advancePosition(position, amount) {
 
 export function createGame(players, now = () => Date.now()) {
   if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
-    throw new RangeError("Digital Demo Rules support 2-4 players");
+    throw new RangeError("K9 Blitz Digital Rules v1.0 supports 2-4 players");
   }
   const ids = new Set();
   const pawnIds = new Set();
@@ -37,14 +37,15 @@ export function createGame(players, now = () => Date.now()) {
   }
   const startedAt = now();
   return {
-    version: 1,
+    version: 2,
     rulesVersion: RULES_VERSION,
     contentVersion: CONTENT_VERSION,
     status: "playing",
     activePlayerIndex: 0,
     round: 1,
     dice: null,
-    deckCursor: 0,
+    trainerDrawPile: TRAINER_CARDS.map((card) => card.id),
+    trainerDiscardPile: [],
     startedAt,
     updatedAt: startedAt,
     winnerPlayerId: null,
@@ -57,14 +58,30 @@ export function createGame(players, now = () => Date.now()) {
       cardsDrawn: 0,
     })),
     history: [
-      { id: `event-${startedAt}`, at: startedAt, type: "game", text: "Game started in Digital Demo Rules mode." },
+      { id: `event-${startedAt}`, at: startedAt, type: "game", text: "Game started with K9 Blitz Digital Rules v1.0." },
     ],
   };
 }
 
-export function drawTrainerCard(state) {
-  const card = TRAINER_CARDS[state.deckCursor % TRAINER_CARDS.length];
-  return { card, nextCursor: (state.deckCursor + 1) % TRAINER_CARDS.length };
+export function drawTrainerCard(state, random = Math.random) {
+  let drawPile = Array.isArray(state.trainerDrawPile) ? [...state.trainerDrawPile] : TRAINER_CARDS.map((card) => card.id);
+  let discardPile = Array.isArray(state.trainerDiscardPile) ? [...state.trainerDiscardPile] : [];
+  if (drawPile.length === 0) {
+    drawPile = [...discardPile];
+    discardPile = [];
+  }
+  if (drawPile.length === 0) throw new Error("Trainer Card deck contains no cards");
+
+  const randomValue = random();
+  if (!Number.isFinite(randomValue) || randomValue < 0 || randomValue >= 1) {
+    throw new RangeError("Random value must be >= 0 and < 1");
+  }
+  const index = Math.floor(randomValue * drawPile.length);
+  const [cardId] = drawPile.splice(index, 1);
+  const card = TRAINER_CARDS.find((candidate) => candidate.id === cardId);
+  if (!card) throw new Error(`Unknown Trainer Card ${cardId}`);
+  discardPile.push(card.id);
+  return { card, nextDrawPile: drawPile, nextDiscardPile: discardPile };
 }
 
 export function applyCardEffect(player, card) {
