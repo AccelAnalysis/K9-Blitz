@@ -1,4 +1,10 @@
-import { BOARD_SPACES, CONTENT_VERSION, RULES_VERSION, TRAINER_CARDS } from "./game-data.js";
+import {
+  BOARD_SPACES,
+  CONTENT_VERSION,
+  PLAYER_RULES,
+  RULES_VERSION,
+  TRAINER_CARDS,
+} from "./game-data.js";
 
 export const MAX_COMPETITION = 8;
 export const LAST_SPACE = BOARD_SPACES.length - 1;
@@ -24,24 +30,44 @@ export function advancePosition(position, amount) {
 }
 
 export function createGame(players, now = () => Date.now()) {
-  if (!Array.isArray(players) || players.length < 2 || players.length > 4) {
-    throw new RangeError("Digital Demo Rules support 2-4 players");
+  if (
+    !Array.isArray(players) ||
+    players.length < PLAYER_RULES.minimumPlayers ||
+    players.length > PLAYER_RULES.maximumPlayers
+  ) {
+    throw new RangeError(
+      `K9 Blitz Digital Rules support ${PLAYER_RULES.minimumPlayers}-${PLAYER_RULES.maximumPlayers} players`,
+    );
   }
+
+  if (players[0]?.controllerType !== "human") {
+    throw new Error("Seat 1 must be a human trainer in local/solo play");
+  }
+
   const ids = new Set();
   const pawnIds = new Set();
+  const dogIds = new Set();
   for (const player of players) {
     if (!player.id || ids.has(player.id)) throw new Error("Players require unique IDs");
     if (!player.pawnId || pawnIds.has(player.pawnId)) throw new Error("Players require unique pawns");
+    if (!player.dogId || (PLAYER_RULES.uniqueDogs && dogIds.has(player.dogId))) {
+      throw new Error("Players require unique dogs");
+    }
     ids.add(player.id);
     pawnIds.add(player.pawnId);
+    dogIds.add(player.dogId);
   }
+
   const startedAt = now();
   return {
-    version: 1,
+    version: 2,
     rulesVersion: RULES_VERSION,
     contentVersion: CONTENT_VERSION,
+    playerRulesId: PLAYER_RULES.id,
+    playerRuleProvenance: PLAYER_RULES.provenance,
     status: "playing",
-    activePlayerIndex: 0,
+    activePlayerIndex: PLAYER_RULES.startingSeatNumber - 1,
+    turnOrder: PLAYER_RULES.turnOrder,
     round: 1,
     dice: null,
     deckCursor: 0,
@@ -57,7 +83,12 @@ export function createGame(players, now = () => Date.now()) {
       cardsDrawn: 0,
     })),
     history: [
-      { id: `event-${startedAt}`, at: startedAt, type: "game", text: "Game started in Digital Demo Rules mode." },
+      {
+        id: `event-${startedAt}`,
+        at: startedAt,
+        type: "game",
+        text: "Game started with K9 Blitz Digital Rules v1.0. Seat 1 goes first.",
+      },
     ],
   };
 }
